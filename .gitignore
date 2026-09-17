@@ -1,0 +1,6 @@
+.build/
+.swiftpm/
+dist/
+.DS_Store
+.seal/tasks/
+.seal/evidence/

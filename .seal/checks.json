@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "checks": [
+    {
+      "name": "unit-tests",
+      "argv": ["swift", "test"],
+      "required": true,
+      "timeout_seconds": 300
+    },
+    {
+      "name": "app-bundle",
+      "argv": ["bash", "scripts/build-app.sh"],
+      "required": true,
+      "timeout_seconds": 300
+    }
+  ]
+}
