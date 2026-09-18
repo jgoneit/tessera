@@ -216,7 +216,7 @@ struct SettingsView: View {
     }
 
     private var shortcutsCard: some View {
-        TesseraSurface(padding: 16) {
+        TesseraSurface(padding: 0) {
             DisclosureGroup(isExpanded: Binding(
                 get: { shortcutsExpanded },
                 set: { expanded in
@@ -264,6 +264,7 @@ struct SettingsView: View {
                     shortcutStatus
                 }
             }
+            .disclosureGroupStyle(SettingsDisclosureStyle(language: preferences.language))
         }
     }
 
@@ -347,6 +348,38 @@ struct SettingsView: View {
     }
 
     private func t(_ key: String) -> String { L10n.text(key, language: preferences.language) }
+}
+
+/// The entire header is one keyboard-accessible control, including its padding.
+private struct SettingsDisclosureStyle: DisclosureGroupStyle {
+    let language: AppLanguage
+
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                configuration.isExpanded.toggle()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: configuration.isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .frame(width: 24, height: 24)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                        .accessibilityHidden(true)
+                    configuration.label
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .padding(16)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(L10n.text(configuration.isExpanded ? "Expanded" : "Collapsed", language: language))
+            if configuration.isExpanded {
+                configuration.content
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+            }
+        }
+    }
 }
 
 private struct SettingsGridPreview: View {

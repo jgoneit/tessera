@@ -181,3 +181,5 @@
 "Last action" = "Last action";
 "Record %@ shortcut" = "Record %@ shortcut";
 "Apply shortcuts again to see the current status." = "Apply shortcuts again to see the current status.";
+"Expanded" = "Expanded";
+"Collapsed" = "Collapsed";

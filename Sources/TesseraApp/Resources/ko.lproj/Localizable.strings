@@ -181,3 +181,5 @@
 "Last action" = "최근 작업";
 "Record %@ shortcut" = "%@ 단축키 녹화";
 "Apply shortcuts again to see the current status." = "현재 상태를 확인하려면 단축키를 다시 적용하세요.";
+"Expanded" = "펼쳐짐";
+"Collapsed" = "접힘";
