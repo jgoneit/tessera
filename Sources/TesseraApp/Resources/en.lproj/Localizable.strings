@@ -57,6 +57,9 @@
 "Columns" = "Columns";
 "Height" = "Height";
 "Keep placement" = "Keep placement";
+"1–%d / click" = "1–%d / click";
+"Place & close" = "Place & close";
+"Keep & close" = "Keep & close";
 "Arrangement status" = "Arrangement status";
 "Display: %@" = "Display: %@";
 "Layout: %@" = "Layout: %@";

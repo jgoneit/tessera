@@ -19,7 +19,7 @@ struct SettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 header
                 permissionCard
                 layoutCard
@@ -28,7 +28,7 @@ struct SettingsView: View {
                 guidance
                 statusFooter
             }
-            .padding(28)
+            .padding(24)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .background(TesseraDesign.canvas)
@@ -46,10 +46,10 @@ struct SettingsView: View {
     private var header: some View {
         HStack(spacing: 16) {
             Image(nsImage: AppIcon.image)
-                .resizable().scaledToFit().frame(width: 64, height: 64)
+                .resizable().scaledToFit().frame(width: 48, height: 48)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 5) {
-                Text("Tessera").font(.system(size: 28, weight: .semibold))
+                Text("Tessera").font(.system(size: 22, weight: .semibold))
                 Text(t("Arrange your windows, one shortcut at a time."))
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -63,35 +63,58 @@ struct SettingsView: View {
         .padding(.bottom, 2)
     }
 
+    @ViewBuilder
     private var permissionCard: some View {
-        TesseraSurface(padding: 16) {
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: coordinator.permissionGranted ? "checkmark.shield.fill" : "lock.shield")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(coordinator.permissionGranted ? Color.accentColor : Color.primary)
-                    .frame(width: 38, height: 38)
-                    .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+        if coordinator.permissionGranted {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.shield.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Color.accentColor.opacity(0.8))
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(t(coordinator.permissionGranted ? "Ready to arrange windows" : "Permission required"))
-                        .font(.callout.weight(.semibold))
-                    if !coordinator.permissionGranted {
+                Text(t("Ready to arrange windows"))
+                    .font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                permissionActions
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
+        } else {
+            TesseraSurface(padding: 16) {
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "lock.shield")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .frame(width: 38, height: 38)
+                        .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(t("Permission required"))
+                            .font(.callout.weight(.semibold))
+                            .fixedSize(horizontal: false, vertical: true)
                         Text(t("Allow Tessera to move and resize windows."))
                             .font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    Spacer(minLength: 8)
+                    permissionActions
                 }
-                Spacer(minLength: 8)
-                Button(t("Open Settings")) { coordinator.openAccessibilitySettings() }
-                    .accessibilityLabel(t("Open Accessibility Settings"))
-                    .help(t("Open Accessibility Settings"))
-                Button { coordinator.refreshPermission() } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .accessibilityLabel(t("Check Again"))
-                .help(t("Check Again"))
             }
         }
+    }
+
+    private var permissionActions: some View {
+        HStack(spacing: 8) {
+            Button(t("Open Settings")) { coordinator.openAccessibilitySettings() }
+                .accessibilityLabel(t("Open Accessibility Settings"))
+                .help(t("Open Accessibility Settings"))
+            Button { coordinator.refreshPermission() } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .accessibilityLabel(t("Check Again"))
+            .help(t("Check Again"))
+        }
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private var layoutCard: some View {
@@ -156,7 +179,7 @@ struct SettingsView: View {
     }
 
     private var appearanceCard: some View {
-        TesseraSurface {
+        TesseraSurface(padding: 16) {
             VStack(alignment: .leading, spacing: 16) {
                 sectionHeading("Appearance")
                 HStack {
@@ -193,7 +216,7 @@ struct SettingsView: View {
     }
 
     private var shortcutsCard: some View {
-        TesseraSurface {
+        TesseraSurface(padding: 16) {
             DisclosureGroup(isExpanded: Binding(
                 get: { shortcutsExpanded },
                 set: { expanded in

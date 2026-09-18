@@ -57,6 +57,9 @@
 "Columns" = "열 이동";
 "Height" = "높이 변경";
 "Keep placement" = "배치 유지";
+"1–%d / click" = "1–%d / 클릭";
+"Place & close" = "배치 후 닫기";
+"Keep & close" = "배치 유지 후 닫기";
 "Arrangement status" = "창 배치 상태";
 "Display: %@" = "디스플레이: %@";
 "Layout: %@" = "격자: %@";
