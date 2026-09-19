@@ -482,7 +482,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
             selection.model.status = message
             if !selectorIsOpen {
                 showFeedback(message, screenID: selection.display.id,
-                    duration: result.outcome == .applied ? .seconds(1) : .seconds(4))
+                    duration: result.feedbackDuration)
             }
         }
     }

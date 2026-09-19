@@ -139,8 +139,9 @@
 "moving the resized window" = "moving the resized window";
 "reading the final window frame" = "reading the final window frame";
 "Window arranged." = "Window arranged.";
-"The window did not accept the exact requested size or position. It remains within the usable display area." = "The window did not accept the exact requested size or position. It remains within the usable display area.";
-"The window did not accept the exact requested size or position. It could not be fitted fully inside the usable display area." = "The window did not accept the exact requested size or position. It could not be fitted fully inside the usable display area.";
+"Arranged · Adjusted to app size" = "Arranged · Adjusted to app size";
+"The window could not be aligned to the requested position." = "The window could not be aligned to the requested position.";
+"The window could not fit fully inside the usable display area." = "The window could not fit fully inside the usable display area.";
 "Arrangement was cancelled before the window was changed." = "Arrangement was cancelled before the window was changed.";
 "Arrangement was cancelled." = "Arrangement was cancelled.";
 "Placement stopped while %@. The window may be partly arranged. %@" = "Placement stopped while %@. The window may be partly arranged. %@";

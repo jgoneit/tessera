@@ -19,9 +19,28 @@ struct PlacementResult: Sendable {
         case failed
     }
 
+    enum ConstraintReason: Sendable, Equatable {
+        case sizeAdjusted
+        case positionMismatch
+        case outsideVisibleArea
+    }
+
     let outcome: Outcome
     let message: String
     let actualFrame: CGRect?
+    let constraintReason: ConstraintReason?
+
+    init(outcome: Outcome, message: String, actualFrame: CGRect?, constraintReason: ConstraintReason? = nil) {
+        self.outcome = outcome
+        self.message = message
+        self.actualFrame = actualFrame
+        self.constraintReason = constraintReason
+    }
+
+    var feedbackDuration: Duration {
+        outcome == .applied || (outcome == .constrained && constraintReason == .sizeAdjusted)
+            ? .seconds(1) : .seconds(4)
+    }
 
     /// Only floating-point noise counts as an exact placement. Pixel-sized
     /// adjustments remain constrained, including accumulated far-edge changes.
