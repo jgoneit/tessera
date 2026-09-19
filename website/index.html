@@ -9,8 +9,8 @@
   <meta property="og:description" content="절반, 3분할, 4분할을 같은 방향키로. 위칸부터 열 전체까지 원하는 자리에서 멈추세요." />
   <meta property="og:type" content="website" />
   <link rel="icon" href="./mark.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="./styles.css?v=5355cab4cd2c" />
-  <script type="module" src="./app.mjs?v=18f341276aad"></script>
+  <link rel="stylesheet" href="./styles.css?v=2c01c177cf0c" />
+  <script type="module" src="./app.mjs?v=8ac7027183b9"></script>
 </head>
 <body>
   <svg class="svg-definitions" aria-hidden="true"><defs>
@@ -22,7 +22,7 @@
     <div class="container nav-content">
       <a href="#top" class="brand" aria-label="Tessera 처음으로" data-i18n-aria-label="brand.home">
         <span class="brand-mark"><svg width="15" height="15" aria-hidden="true"><use href="#tessera-mark"/></svg></span>
-        <span>Tessera</span><span class="version-pill">alpha</span>
+        <span>Tessera</span><span class="version-pill">alpha.2</span>
       </a>
       <nav class="nav-links" aria-label="주 메뉴" data-i18n-aria-label="nav.label">
         <a href="#demo" class="nav-link"><span data-i18n="nav.demo">직접 해보기</span></a>
@@ -32,7 +32,7 @@
       <div class="nav-actions">
         <button class="language-toggle" id="languageToggleBtn" type="button" lang="en" aria-label="Switch to English" data-i18n-aria-label="language.switch" data-i18n="language.label">EN</button>
         <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="라이트 테마로 전환" title="테마 전환" data-i18n-title="theme.title"><span id="themeIcon" aria-hidden="true">☼</span></button>
-        <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.1/Tessera-0.1.0-arm64.dmg" class="btn-nav-download" aria-label="다운로드" data-i18n-aria-label="download"><svg class="download-icon" width="14" height="14" aria-hidden="true"><use href="#download-mark"/></svg><span data-i18n="download">다운로드</span></a>
+        <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.2/Tessera-0.1.0-arm64.dmg" class="btn-nav-download" aria-label="다운로드" data-i18n-aria-label="download"><svg class="download-icon" width="14" height="14" aria-hidden="true"><use href="#download-mark"/></svg><span data-i18n="download">다운로드</span></a>
       </div>
     </div>
   </header>
@@ -41,10 +41,10 @@
       <div class="container">
         <div class="release-badge"><span class="badge-tag">Tessera</span><span data-i18n="hero.badge">macOS를 위한 창 배치</span></div>
         <h1 class="hero-h1"><span data-i18n="hero.title1">방향키로 완성하는</span><br /><span data-i18n="hero.title2">macOS 격자 창 분할</span></h1>
-        <p class="hero-sub"><span data-i18n="hero.subtitle1">자주 쓰는 격자를 골라두고, 방향키로 창을 옮기세요.</span><br /><span data-i18n="hero.subtitle2">위·아래 한 칸부터 열 전체까지, 원하는 자리에서 멈추면 돼요.</span></p>
+        <p class="hero-sub"><span data-i18n="hero.subtitle1">자주 쓰는 격자를 골라두고, 방향키로 창을 옮기세요.</span><br /><span data-i18n="hero.subtitle2">위·아래 한 칸부터 열 전체, 최대화까지. 원하는 자리에서 멈추면 돼요.</span></p>
         <div class="hero-cta-wrapper">
           <div class="hero-buttons">
-            <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.1/Tessera-0.1.0-arm64.dmg" class="btn-primary"><svg class="download-icon" width="17" height="17" aria-hidden="true"><use href="#download-mark"/></svg><span data-i18n="hero.download">Mac용 Tessera 다운로드</span></a>
+            <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.2/Tessera-0.1.0-arm64.dmg" class="btn-primary"><svg class="download-icon" width="17" height="17" aria-hidden="true"><use href="#download-mark"/></svg><span data-i18n="hero.download">Mac용 Tessera 다운로드</span></a>
             <a href="#demo" class="btn-secondary"><span data-i18n="hero.preview">먼저 움직여보기</span> <span aria-hidden="true">↓</span></a>
           </div>
           <div class="hero-specs"><span data-i18n="hero.macos">macOS 14 이상</span><span aria-hidden="true">·</span><span>Apple Silicon</span><span aria-hidden="true">·</span><span data-i18n="hero.alpha">알파 버전</span></div>
@@ -88,12 +88,13 @@
               </div>
               <div class="demo-instructions">
                 <p class="demo-instruction-title"><span data-i18n="demo.prompt">방향키를 눌러보세요</span></p>
-                <p id="demoKeyboardHelp"><span data-i18n="demo.help1">격자를 고른 뒤 바로 방향키로 움직여보세요.</span><br class="desktop-break" /> <span data-i18n="demo.help2">아래 버튼으로도 체험할 수 있어요.</span></p>
+                <p id="demoKeyboardHelp"><span data-i18n="demo.help1">격자를 고른 뒤 바로 방향키로 움직여보세요.</span><br class="desktop-break" /> <span data-i18n="demo.help2">최대화 버튼을 누른 뒤 방향키로 다시 움직여보세요.</span></p>
                 <div class="arrow-controls" role="group" aria-label="이동 방향" data-i18n-aria-label="direction.label">
                   <button type="button" class="arrow-key" data-direction="left" aria-label="왼쪽으로 이동" data-i18n-aria-label="direction.left">←</button>
                   <button type="button" class="arrow-key" data-direction="up" aria-label="위로 한 단계 이동" data-i18n-aria-label="direction.up">↑</button>
                   <button type="button" class="arrow-key" data-direction="down" aria-label="아래로 한 단계 이동" data-i18n-aria-label="direction.down">↓</button>
                   <button type="button" class="arrow-key" data-direction="right" aria-label="오른쪽으로 이동" data-i18n-aria-label="direction.right">→</button>
+                  <button type="button" class="arrow-key maximize-key" id="maximizeBtn" aria-label="창 최대화" data-i18n-aria-label="action.maximizeLabel" aria-pressed="false"><span data-i18n="action.maximize">최대화</span></button>
                 </div>
                 <p class="height-guide"><span data-height="top"><span data-i18n="height.top">위칸</span></span><span aria-hidden="true">↔</span><span data-height="full" class="active"><span data-i18n="height.full">열 전체</span></span><span aria-hidden="true">↔</span><span data-height="bottom"><span data-i18n="height.bottom">아래칸</span></span></p>
               </div>
@@ -111,6 +112,7 @@
         <div class="shortcuts-panel">
           <div class="shortcut-row"><div><div class="shortcut-label"><span data-i18n="usage.horizontal">옆으로, 원하는 자리까지</span></div><div class="shortcut-desc"><span data-i18n="usage.horizontalDescription">선택한 격자를 따라 좌우로 이동해요. 끝에 닿으면 반대쪽부터 이어져요.</span></div></div><div class="shortcut-keys" aria-label="Control Option 왼쪽 또는 오른쪽" data-i18n-aria-label="usage.horizontalKeys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>←</kbd><span>/</span><kbd>→</kbd></div></div>
           <div class="shortcut-row"><div><div class="shortcut-label"><span data-i18n="usage.vertical">높이도 한 단계씩</span></div><div class="shortcut-desc"><span data-i18n="usage.verticalDescription">위칸 ↔ 열 전체 ↔ 아래칸. 키를 놓았다가 다시 누르면 다음 높이로 바뀌어요.</span></div></div><div class="shortcut-keys" aria-label="Control Option 위 또는 아래" data-i18n-aria-label="usage.verticalKeys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>↑</kbd><span>/</span><kbd>↓</kbd></div></div>
+          <div class="shortcut-row"><div><div class="shortcut-label"><span data-i18n="usage.maximize">화면을 넓게 쓰고 싶을 때</span></div><div class="shortcut-desc"><span data-i18n="usage.maximizeDescription">최대화한 뒤 위아래로 화면 반쪽을, 좌우로 격자를 선택하세요.</span></div></div><div class="shortcut-keys" aria-label="Control Option Return" data-i18n-aria-label="usage.maximizeKeys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>↵</kbd></div></div>
           <div class="shortcut-row"><div><div class="shortcut-label"><span data-i18n="usage.zone">원하는 칸을 바로 선택해도 돼요</span></div><div class="shortcut-desc"><span data-i18n="usage.zoneDescription">메뉴바의 ‘창 배치…’에서 칸을 클릭하거나 숫자를 누르세요.</span><br /><span data-i18n="usage.numbers">2×2는 1–4, 3×2는 1–6, 4×2는 1–8을 사용해요.</span></div></div><div class="shortcut-keys"><span class="number-hint"><span data-i18n="usage.click">숫자 또는 클릭</span></span></div></div>
         </div>
       </div>
@@ -123,7 +125,7 @@
           <div class="install-step"><div class="step-header"><span class="step-num">02</span><h3><span data-i18n="install.step2">창 이동 허용하기</span></h3></div><p><span data-i18n="install.detail2">Tessera를 실행하고 안내에 따라 손쉬운 사용 권한을 허용하세요. 앱은 메뉴바에 나타나요.</span></p></div>
           <div class="install-step"><div class="step-header"><span class="step-num">03</span><h3><span data-i18n="install.step3">방향키로 시작하기</span></h3></div><p><span data-i18n="install.detail3">움직일 창을 클릭한 뒤 Control + Option을 누른 채 방향키를 눌러보세요.</span></p></div>
         </div>
-        <p class="install-help"><span data-i18n="install.help">현재는 알파 버전이에요. 처음 실행이 막히거나 설치가 어렵다면</span> <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.1"><span data-i18n="install.guide">설치 안내를 확인하세요 ↗</span></a></p>
+        <p class="install-help"><span data-i18n="install.help">현재는 알파 버전이에요. 처음 실행이 막히거나 설치가 어렵다면</span> <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2"><span data-i18n="install.guide">설치 안내를 확인하세요 ↗</span></a></p>
       </div>
     </section>
   </main>

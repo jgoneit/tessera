@@ -739,11 +739,13 @@ section[id], main[id] { scroll-margin-top: 76px; }
 .demo-selection { font-size: 12px; color: var(--text-main); text-align: center; line-height: 1.4; }
 .demo-instructions { font-size: 12px; line-height: 1.65; color: var(--text-muted); }
 .demo-instruction-title { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 3px; }
-.arrow-controls { display: flex; gap: 7px; margin-top: 12px; }
+.arrow-controls { display: flex; gap: 7px; margin-top: 12px; flex-wrap: wrap; }
 .arrow-key { height: 34px; width: 43px; border-radius: 6px; background: var(--kbd-bg); color: var(--kbd-text); border: 1px solid var(--kbd-border); box-shadow: 0 2px 0 var(--kbd-shadow); font-size: 19px; transition: background .12s; }
 .arrow-key:hover { background: var(--surface-hover); }
+.maximize-key { width: auto; min-width: 92px; padding: 0 12px; font-size: 12px; font-weight: 600; }
+.maximize-key[aria-pressed="true"] { background: var(--blue-soft); border-color: var(--blue-accent); }
 .arrow-key:active, .arrow-key.is-pressed { background: var(--blue-soft); border-color: var(--blue-accent); box-shadow: none; transform: translateY(1px); }
-.height-guide { display: flex; gap: 7px; align-items: center; margin-top: 10px; font-size: 11px; }
+.height-guide { display: flex; gap: 7px; align-items: center; justify-content: flex-start; flex-wrap: wrap; margin-top: 10px; font-size: 11px; }
 .height-guide .active { color: var(--text-main); font-weight: 650; }
 .demo-caption { font-size: 11px; line-height: 1.7; color: var(--text-muted); text-align: center; padding: 11px 20px; border-top: 1px solid var(--border); }
 .demo-caption kbd { background: transparent; border: 0; box-shadow: none; padding: 0; font-size: inherit; font-family: inherit; color: var(--text-main); }

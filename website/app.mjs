@@ -1,6 +1,6 @@
-import { createState, move, selectZone, setLayouts, selectedZones, frame } from './navigation.mjs?v=45c6756dbe0d';
+import { createState, maximize, move, selectZone, setLayouts, selectedZones, frame } from './navigation.mjs?v=bd4bcbeb0add';
 
-import { resolveLanguage, t, translateDocument } from './i18n.mjs?v=59ea53c4eeee';
+import { resolveLanguage, t, translateDocument } from './i18n.mjs?v=206e36eacc6e';
 
 const root = document.documentElement;
 const languageButton = document.querySelector('#languageToggleBtn');
@@ -41,6 +41,7 @@ const guides = document.querySelector('#layoutGuides');
 const cards = document.querySelector('#hudCards');
 const layoutInputs = [...document.querySelectorAll('input[name="layout"]')];
 const directionButtons = [...document.querySelectorAll('[data-direction]')];
+const maximizeButton = document.querySelector('#maximizeBtn');
 let state = createState([3]);
 let renderedColumns = 0;
 
@@ -90,15 +91,22 @@ function render() {
   const highlight = cards.querySelector('.hud-highlight');
   const cellWidth = (cards.clientWidth - 5 * (state.columns - 1)) / state.columns;
   Object.assign(highlight.style, {
-    left: `${(state.column - 1) * (cellWidth + 5)}px`, width: `${cellWidth}px`,
+    left: state.screenWidth ? '0px' : `${(state.column - 1) * (cellWidth + 5)}px`,
+    width: state.screenWidth ? `${cards.clientWidth}px` : `${cellWidth}px`,
     top: state.height === 'bottom' ? '41px' : '0px', height: state.height === 'full' ? '77px' : '36px'
   });
 
   const heightName = text(`height.${state.height}`);
-  document.querySelector('#currentLayout').textContent = `${state.columns}×2`;
-  document.querySelector('#selectionLabel').textContent = text('selection', { columns: state.columns, column: state.column, height: heightName });
-  document.querySelectorAll('[data-height]').forEach(label => label.classList.toggle('active', label.dataset.height === state.height));
-  Object.assign(demoWindow.dataset, { layout: `${state.columns}x2`, column: state.column, height: state.height });
+  document.querySelector('#currentLayout').textContent = state.screenWidth ? text('screen.label') : `${state.columns}×2`;
+  document.querySelector('#selectionLabel').textContent = state.screenWidth
+    ? text(`screen.${state.height}`)
+    : text('selection', { columns: state.columns, column: state.column, height: heightName });
+  document.querySelectorAll('.height-guide [data-height]').forEach(label => {
+    label.classList.toggle('active', label.dataset.height === state.height);
+    label.textContent = text(`${state.screenWidth ? 'screen' : 'height'}.${label.dataset.height}`);
+  });
+  maximizeButton.setAttribute('aria-pressed', String(Boolean(state.screenWidth && state.height === 'full')));
+  Object.assign(demoWindow.dataset, { layout: `${state.columns}x2`, column: state.column, height: state.height, screenWidth: String(Boolean(state.screenWidth)) });
   layoutInputs.forEach(input => {
     input.checked = state.layouts.includes(Number(input.value));
     input.disabled = input.checked && state.layouts.length === 1;
@@ -146,6 +154,11 @@ directionButtons.forEach(button => button.addEventListener('click', () => {
   button.focus({ preventScroll: true });
   navigate(button.dataset.direction);
 }));
+maximizeButton.addEventListener('click', () => {
+  maximizeButton.focus({ preventScroll: true });
+  state = maximize(state);
+  render();
+});
 cards.addEventListener('click', event => {
   const button = event.target.closest('[data-zone]');
   if (!button) return;

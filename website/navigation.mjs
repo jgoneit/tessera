@@ -30,8 +30,8 @@ function nearestCandidate(choices, center) {
   return choices[index];
 }
 
-function stateAt(layouts, candidate, height) {
-  return { layouts, columns: candidate.columns, column: candidate.column, height };
+function stateAt(layouts, candidate, height, screenWidth = false) {
+  return { layouts, columns: candidate.columns, column: candidate.column, height, screenWidth };
 }
 
 /** Start with a full-height column nearest the middle; exact ties go left. */
@@ -40,9 +40,20 @@ export function createState(layouts = [3]) {
   return stateAt(enabled, nearestCandidate(candidates(enabled), 0.5), 'full');
 }
 
+/** Fill the usable screen; repeated commands never restore a prior placement. */
+export function maximize(state) {
+  return stateAt([...state.layouts], nearestCandidate(candidates(state.layouts), 0.5), 'full', true);
+}
+
 export function move(state, direction) {
   if (direction === 'left' || direction === 'right') {
     const choices = candidates(state.layouts);
+    if (state.screenWidth) {
+      const destination = direction === 'left'
+        ? choices.findLast(candidate => candidate.center < 0.5) ?? choices.at(-1)
+        : choices.find(candidate => candidate.center > 0.5) ?? choices[0];
+      return stateAt([...state.layouts], destination, state.height);
+    }
     const current = choices.findIndex(({ columns, column }) => columns === state.columns && column === state.column);
     const offset = direction === 'left' ? -1 : 1;
     const next = (current + offset + choices.length) % choices.length;
@@ -64,18 +75,24 @@ export function selectZone(state, id) {
     layouts: [...state.layouts],
     column: ((id - 1) % state.columns) + 1,
     height: id <= state.columns ? 'top' : 'bottom',
+    screenWidth: false,
   };
 }
 
-/** Prefer a newly enabled grid while keeping the vertical step and all choices. */
+/** Prefer a newly enabled grid, retaining screen-wide placement when active. */
 export function setLayouts(state, layouts, preferredColumns) {
   const enabled = enabledLayouts(layouts);
-  const center = (2 * state.column - 1) / (2 * state.columns);
+  const center = state.screenWidth ? 0.5 : (2 * state.column - 1) / (2 * state.columns);
   const choices = candidates(enabled.includes(preferredColumns) ? [preferredColumns] : enabled);
-  return stateAt(enabled, nearestCandidate(choices, center), state.height);
+  return stateAt(enabled, nearestCandidate(choices, center), state.height, state.screenWidth);
 }
 
 export function selectedZones(state) {
+  if (state.screenWidth) {
+    const start = state.height === 'bottom' ? state.columns + 1 : 1;
+    const length = state.height === 'full' ? state.columns * 2 : state.columns;
+    return Array.from({ length }, (_, index) => start + index);
+  }
   if (state.height === 'top') return [state.column];
   if (state.height === 'bottom') return [state.columns + state.column];
   return [state.column, state.columns + state.column];
@@ -97,19 +114,24 @@ export function frame(state, { width = 1000, height = 500, gap = 8, scale = 1 } 
     || width <= 0 || height <= 0 || gap < 0 || scale <= 0) {
     throw new RangeError('Invalid preview dimensions, gap, or scale');
   }
-  if (![width * scale, height * scale, gap * scale].every((value) => value <= 2 ** 52)) {
+  const maximized = state.screenWidth && state.height === 'full';
+  const effectiveGap = maximized ? 0 : gap;
+  if (![width * scale, height * scale, effectiveGap * scale].every((value) => value <= 2 ** 52)) {
     throw new RangeError('Preview dimensions exceed the supported pixel range');
   }
   const pixelWidth = Math.floor(width * scale);
   const pixelHeight = Math.floor(height * scale);
-  const pixelGap = Math.round(gap * scale);
-  const availableWidth = pixelWidth - (state.columns + 1) * pixelGap;
-  const availableHeight = pixelHeight - 3 * pixelGap;
-  if (availableWidth < state.columns || availableHeight < 2) {
+  const pixelGap = Math.round(effectiveGap * scale);
+  const columns = state.screenWidth ? 1 : state.columns;
+  const rows = maximized ? 1 : 2;
+  const column = state.screenWidth ? 0 : state.column - 1;
+  const availableWidth = pixelWidth - (columns + 1) * pixelGap;
+  const availableHeight = pixelHeight - (rows + 1) * pixelGap;
+  if (availableWidth < columns || availableHeight < rows) {
     throw new RangeError('Not enough space for the selected grid and gaps');
   }
-  const horizontal = partition(availableWidth, state.columns, state.column - 1);
-  const x = pixelGap + horizontal.offset + (state.column - 1) * pixelGap;
+  const horizontal = partition(availableWidth, columns, column);
+  const x = pixelGap + horizontal.offset + column * pixelGap;
   if (state.height === 'full') {
     return { x: x / scale, y: pixelGap / scale, width: horizontal.length / scale, height: (pixelHeight - 2 * pixelGap) / scale };
   }
