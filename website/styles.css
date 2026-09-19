@@ -787,3 +787,22 @@ section[id], main[id] { scroll-margin-top: 76px; }
   :root { --text-muted: #c6ced7; --text-dim: #c6ced7; --border: #6b7583; --border-strong: #a4b0bf; }
   html.light { --text-muted: #38414d; --text-dim: #38414d; --border: #687789; --border-strong: #465569; }
 }
+
+/* Keep language and theme controls available on narrow screens. */
+.language-toggle {
+  min-width: 42px;
+  height: 32px;
+  padding: 0 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 550;
+}
+.language-toggle:hover { color: var(--text-main); border-color: var(--border-strong); }
+@media (max-width: 480px) {
+  .nav-actions { gap: 7px; }
+  .btn-nav-download { justify-content: center; width: 32px; height: 32px; padding: 0; }
+  .btn-nav-download > span { display: none; }
+}

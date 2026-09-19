@@ -1,6 +1,17 @@
-import { createState, move, selectZone, setLayouts, selectedZones, frame } from './navigation.mjs';
+import { createState, move, selectZone, setLayouts, selectedZones, frame } from './navigation.mjs?v=45c6756dbe0d';
+
+import { resolveLanguage, t, translateDocument } from './i18n.mjs?v=59ea53c4eeee';
 
 const root = document.documentElement;
+const languageButton = document.querySelector('#languageToggleBtn');
+let savedLanguage;
+try { savedLanguage = localStorage.getItem('tessera-website-language.v1'); } catch { /* Storage is optional. */ }
+let language = resolveLanguage({
+  requested: new URL(window.location.href).searchParams.get('lang'),
+  saved: savedLanguage,
+  preferred: navigator.languages
+});
+const text = (key, values) => t(language, key, values);
 const themeButton = document.querySelector('#themeToggleBtn');
 const colorScheme = window.matchMedia('(prefers-color-scheme: dark)');
 let chosenTheme;
@@ -10,7 +21,7 @@ function renderTheme(theme) {
   root.classList.toggle('light', light);
   root.classList.toggle('dark', !light);
   document.querySelector('#themeIcon').textContent = light ? '☾' : '☼';
-  themeButton.setAttribute('aria-label', light ? '다크 테마로 전환' : '라이트 테마로 전환');
+  themeButton.setAttribute('aria-label', text(light ? 'theme.dark' : 'theme.light'));
 }
 renderTheme(['light', 'dark'].includes(chosenTheme) ? chosenTheme : colorScheme.matches ? 'dark' : 'light');
 themeButton.addEventListener('click', () => {
@@ -45,15 +56,12 @@ function render() {
     guides.replaceChildren();
     cards.style.gridTemplateColumns = `repeat(${state.columns}, 1fr)`;
     guides.style.gridTemplateColumns = `repeat(${state.columns}, 1fr)`;
-    cards.setAttribute('aria-label', `${state.columns}×2 격자 영역 선택`);
     for (let id = 1; id <= state.columns * 2; id++) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'hud-card';
       button.dataset.zone = id;
       button.textContent = id;
-      const column = (id - 1) % state.columns + 1;
-      button.setAttribute('aria-label', `${id}번 영역, ${column}열 ${id <= state.columns ? '위칸' : '아래칸'}`);
       cards.append(button);
       const guide = document.createElement('div');
       guide.className = 'layout-guide';
@@ -67,9 +75,15 @@ function render() {
     if (hadZoneFocus) interaction.focus({ preventScroll: true });
   }
 
+  cards.setAttribute('aria-label', text('grid.label', { columns: state.columns }));
   const activeIDs = selectedZones(state);
   cards.querySelectorAll('[data-zone]').forEach(button => {
-    const active = activeIDs.includes(Number(button.dataset.zone));
+    const id = Number(button.dataset.zone);
+    button.setAttribute('aria-label', text('zone.label', {
+      id, column: (id - 1) % state.columns + 1,
+      height: text(id <= state.columns ? 'height.top' : 'height.bottom')
+    }));
+    const active = activeIDs.includes(id);
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
@@ -80,9 +94,9 @@ function render() {
     top: state.height === 'bottom' ? '41px' : '0px', height: state.height === 'full' ? '77px' : '36px'
   });
 
-  const heightName = { top: '위칸', full: '전체', bottom: '아래칸' }[state.height];
+  const heightName = text(`height.${state.height}`);
   document.querySelector('#currentLayout').textContent = `${state.columns}×2`;
-  document.querySelector('#selectionLabel').textContent = `${state.columns}×2 · ${state.column}열 ${heightName}`;
+  document.querySelector('#selectionLabel').textContent = text('selection', { columns: state.columns, column: state.column, height: heightName });
   document.querySelectorAll('[data-height]').forEach(label => label.classList.toggle('active', label.dataset.height === state.height));
   Object.assign(demoWindow.dataset, { layout: `${state.columns}x2`, column: state.column, height: state.height });
   layoutInputs.forEach(input => {
@@ -91,6 +105,31 @@ function render() {
   });
   renderFrame();
 }
+
+function renderLanguage() {
+  translateDocument(document, language);
+  languageButton.lang = language === 'ko' ? 'en' : 'ko';
+  renderTheme(root.classList.contains('light') ? 'light' : 'dark');
+  render();
+}
+languageButton.addEventListener('click', () => {
+  language = language === 'ko' ? 'en' : 'ko';
+  savedLanguage = language;
+  try { localStorage.setItem('tessera-website-language.v1', language); } catch { /* Keep the in-page preference. */ }
+  const url = new URL(window.location.href);
+  url.searchParams.set('lang', language);
+  window.history.replaceState(null, '', url);
+  renderLanguage();
+});
+
+window.addEventListener('popstate', () => {
+  language = resolveLanguage({
+    requested: new URL(window.location.href).searchParams.get('lang'),
+    saved: savedLanguage,
+    preferred: navigator.languages
+  });
+  renderLanguage();
+});
 
 function navigate(direction) {
   state = move(state, direction);
@@ -149,4 +188,4 @@ demo.addEventListener('focusout', clearPressed);
 window.addEventListener('blur', clearPressed);
 document.addEventListener('visibilitychange', clearPressed);
 new ResizeObserver(() => render()).observe(stage);
-render();
+renderLanguage();
