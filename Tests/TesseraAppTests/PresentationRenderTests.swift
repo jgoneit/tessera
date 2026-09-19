@@ -64,13 +64,41 @@ struct PresentationRenderTests {
                     try render(view, size: CGSize(width: 580, height: 546), theme: theme,
                         to: directory.appendingPathComponent("selector-\(layout.rawValue)-\(language.rawValue)-\(theme.rawValue).png"))
                 }
+                for target in [PlacementTarget.maximized, .screenTop, .screenBottom] {
+                    let bounds = CGRect(x: 0, y: 0, width: 1200, height: 800)
+                    let frame = try GridGeometry.frame(in: bounds, layout: .fourByTwo,
+                        target: target, gap: 8, scale: 2)
+                    let model = ZoneSelectionModel(navigation: GridNavigation(
+                        layout: .fourByTwo, windowFrame: frame, visibleFrame: bounds, gap: 8, scale: 2))
+                    model.status = L10n.text("Arranged · Adjusted to app size", language: language)
+                    let name: String
+                    switch target {
+                    case .maximized: name = "maximized"
+                    case .screenTop: name = "screen-top"
+                    default: name = "screen-bottom"
+                    }
+                    for width in [360.0, 620.0] {
+                        let gridSize = CGSize(width: width, height: width * 2 / 3)
+                        let view = ZoneSelectorView(model: model,
+                            appName: "A development application with a long window title",
+                            displayName: "External display with a long name",
+                            gridSize: gridSize, language: language, maximizeShortcut: "⌃⌥↵",
+                            onSelect: { _ in })
+                            .environment(\.colorScheme, theme == .dark ? .dark : .light)
+                            .background(TesseraDesign.canvas)
+                        try render(view, size: CGSize(width: width + 40, height: gridSize.height + 220),
+                            theme: theme, highContrast: width == 360,
+                            to: directory.appendingPathComponent(
+                                "selector-\(name)-\(Int(width))-\(language.rawValue)-\(theme.rawValue).png"))
+                    }
+                }
                 let bounds = CGRect(x: 0, y: 0, width: 5120, height: 2130)
                 let frame = try GridGeometry.frame(in: bounds, layout: .fourByTwo,
                     target: .column(2), gap: 8, scale: 1)
                 let model = ZoneSelectionModel(navigation: GridNavigation(layout: .fourByTwo,
                     windowFrame: frame, visibleFrame: bounds, gap: 8, scale: 1))
                 model.status = L10n.text(
-                    "The window did not accept the exact requested size or position. It remains within the usable display area.",
+                    "The window could not fit fully inside the usable display area.",
                     language: language)
                 for highContrast in [false, true] {
                     for width in [360.0, 620.0] {
@@ -87,13 +115,18 @@ struct PresentationRenderTests {
                                 "selector-long-\(Int(width))-\(highContrast ? "high-contrast" : "standard")-\(language.rawValue)-\(theme.rawValue).png"))
                     }
                 }
-                let feedback = PlacementFeedbackView(message: L10n.text(
-                    "The window did not accept the exact requested size or position. It remains within the usable display area.", language: language),
-                    width: 440, language: language)
-                    .environment(\.colorScheme, theme == .dark ? .dark : .light)
-                    .background(TesseraDesign.canvas)
-                try render(feedback, size: CGSize(width: 440, height: 112), theme: theme,
-                    to: directory.appendingPathComponent("feedback-\(language.rawValue)-\(theme.rawValue).png"))
+                for (name, message) in [
+                    ("feedback", "The window could not fit fully inside the usable display area."),
+                    ("feedback-size-adjusted", "Arranged · Adjusted to app size"),
+                    ("feedback-position-mismatch", "The window could not be aligned to the requested position."),
+                ] {
+                    let feedback = PlacementFeedbackView(message: L10n.text(message, language: language),
+                        width: 440, language: language)
+                        .environment(\.colorScheme, theme == .dark ? .dark : .light)
+                        .background(TesseraDesign.canvas)
+                    try render(feedback, size: CGSize(width: 440, height: 112), theme: theme,
+                        to: directory.appendingPathComponent("\(name)-\(language.rawValue)-\(theme.rawValue).png"))
+                }
             }
         }
     }

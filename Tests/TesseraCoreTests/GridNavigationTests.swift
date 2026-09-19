@@ -140,6 +140,8 @@ func mixedNavigationAlwaysSelectsValidConsistentTargets(_ layout: LayoutPreset) 
         case .zone(let zone):
             #expect((zone - 1) % layout.columns + 1 == state.column)
             #expect(state.highlightedZoneIDs == [zone])
+        case .maximized, .screenTop, .screenBottom:
+            Issue.record("Grid-only movement must not enter a screen-wide state")
         }
     }
 }

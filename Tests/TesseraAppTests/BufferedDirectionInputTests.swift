@@ -5,7 +5,7 @@ import TesseraCore
 
 @Suite("Buffered directional commands", .timeLimit(.minutes(1)))
 @MainActor
-struct BufferedDirectionInputTests {
+struct BufferedPlacementInputTests {
     @Test("Every direction received during capture changes navigation in order")
     func retainsInitialDirections() async {
         let gate = DirectionPreparationGate()
@@ -14,15 +14,15 @@ struct BufferedDirectionInputTests {
             windowFrame: CGRect(x: 450, y: 200, width: 300, height: 200),
             visibleFrame: CGRect(x: 0, y: 0, width: 1200, height: 800))
         var idleCount = 0
-        let input = BufferedDirectionInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
-        input.submit(.up)
+        let input = BufferedPlacementInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
+        input.submit(.direction(.up))
         await gate.waitForCalls(1)
-        input.submit(.right)
-        input.submit(.right)
-        input.submit(.down)
+        input.submit(.direction(.right))
+        input.submit(.direction(.right))
+        input.submit(.direction(.down))
         #expect(destinations.isEmpty)
         gate.resolve { direction in
-            if navigation.move(direction) { destinations.append(navigation.selectedPlacement) }
+            if case .direction(let direction) = direction, navigation.move(direction) { destinations.append(navigation.selectedPlacement) }
         }
         await waitUntil { idleCount == 1 }
         #expect(destinations == [placement(.zone(2)), placement(.zone(3)), placement(.zone(1)), placement(.column(1))])
@@ -39,14 +39,14 @@ struct BufferedDirectionInputTests {
             windowFrame: initialFrame, visibleFrame: display)
         var destinations: [GridPlacement] = []
         var idleCount = 0
-        let input = BufferedDirectionInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
-        input.submit(.up)
+        let input = BufferedPlacementInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
+        input.submit(.direction(.up))
         await gate.waitForCalls(1)
-        input.submit(.right)
-        input.submit(.right)
-        input.submit(.down)
+        input.submit(.direction(.right))
+        input.submit(.direction(.right))
+        input.submit(.direction(.down))
         gate.resolve { direction in
-            if let target = state.move(direction) { destinations.append(target) }
+            if let target = state.apply(direction) { destinations.append(target) }
         }
         await waitUntil { idleCount == 1 }
         #expect(destinations == [
@@ -61,14 +61,14 @@ struct BufferedDirectionInputTests {
     @Test("Late capture completion after cancellation cannot apply or replace a newer capture")
     func cancellationSeparatesGenerations() async {
         let gate = DirectionPreparationGate()
-        var directions: [GridDirection] = []
+        var directions: [PlacementAction] = []
         var idleCount = 0
-        let input = BufferedDirectionInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
-        input.submit(.left)
+        let input = BufferedPlacementInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
+        input.submit(.direction(.left))
         await gate.waitForCalls(1)
-        input.submit(.up)
+        input.submit(.direction(.up))
         input.cancel()
-        input.submit(.down)
+        input.submit(.direction(.down))
         await gate.waitForCalls(2)
         gate.resolve { directions.append($0) }
         for _ in 0..<10 { await Task.yield() }
@@ -77,25 +77,64 @@ struct BufferedDirectionInputTests {
         #expect(idleCount == 0)
         gate.resolve { directions.append($0) }
         await waitUntil { idleCount == 1 }
-        #expect(directions == [.down])
+        #expect(directions == [.direction(.down)])
     }
 
     @Test("A failed capture discards its inputs and the next press can start fresh")
     func failedPreparation() async {
         let gate = DirectionPreparationGate()
-        var directions: [GridDirection] = []
+        var directions: [PlacementAction] = []
         var idleCount = 0
-        let input = BufferedDirectionInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
-        input.submit(.up)
-        input.submit(.left)
+        let input = BufferedPlacementInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
+        input.submit(.direction(.up))
+        input.submit(.direction(.left))
         await gate.waitForCalls(1)
         gate.resolve(nil)
         await waitUntil { idleCount == 1 }
-        input.submit(.right)
+        input.submit(.direction(.right))
         await gate.waitForCalls(2)
         gate.resolve { directions.append($0) }
         await waitUntil { idleCount == 2 }
-        #expect(directions == [.right])
+        #expect(directions == [.direction(.right)])
+    }
+
+    @Test("Maximize and subsequent directions retain their capture order")
+    func maximizeBeforeInitialDirections() async {
+        let gate = DirectionPreparationGate()
+        let display = CGRect(x: -1200, y: 25, width: 1200, height: 800)
+        var state = DirectNavigationState(layouts: [.twoByTwo, .threeByTwo],
+            windowFrame: CGRect(x: -1000, y: 200, width: 200, height: 200), visibleFrame: display)
+        var destinations: [GridPlacement] = []
+        var idleCount = 0
+        let input = BufferedPlacementInput(prepare: { await gate.prepare() }, onIdle: { idleCount += 1 })
+        input.submit(.maximize)
+        await gate.waitForCalls(1)
+        input.submit(.direction(.up))
+        input.submit(.direction(.left))
+        input.submit(.direction(.down))
+        #expect(destinations.isEmpty)
+        gate.resolve { action in
+            if let target = state.apply(action) { destinations.append(target) }
+        }
+        await waitUntil { idleCount == 1 }
+        #expect(destinations.map(\.target) == [.maximized, .screenTop, .zone(1), .column(1)])
+        #expect(destinations[2].layout == .twoByTwo)
+        #expect(destinations[3].layout == .twoByTwo)
+    }
+
+    @Test("Cancelling capture drops maximize together with directions")
+    func cancelledMaximizeNeverApplies() async {
+        let gate = DirectionPreparationGate()
+        var applied: [PlacementAction] = []
+        let input = BufferedPlacementInput(prepare: { await gate.prepare() }, onIdle: {})
+        input.submit(.maximize)
+        await gate.waitForCalls(1)
+        input.submit(.direction(.left))
+        input.cancel()
+        gate.resolve { applied.append($0) }
+        for _ in 0..<20 { await Task.yield() }
+        #expect(applied.isEmpty)
+        #expect(!input.isPreparing)
     }
 
     @Test("A direct placement queue remains usable between separate input bursts")
@@ -135,13 +174,13 @@ struct BufferedDirectionInputTests {
 
 @MainActor
 private final class DirectionPreparationGate {
-    private var continuations: [CheckedContinuation<BufferedDirectionInput.Apply?, Never>] = []
+    private var continuations: [CheckedContinuation<BufferedPlacementInput.Apply?, Never>] = []
     private(set) var calls = 0
-    func prepare() async -> BufferedDirectionInput.Apply? {
+    func prepare() async -> BufferedPlacementInput.Apply? {
         calls += 1
         return await withCheckedContinuation { continuations.append($0) }
     }
-    func resolve(_ apply: BufferedDirectionInput.Apply?) { continuations.removeFirst().resume(returning: apply) }
+    func resolve(_ apply: BufferedPlacementInput.Apply?) { continuations.removeFirst().resume(returning: apply) }
     func waitForCalls(_ count: Int) async {
         while calls < count { await Task.yield() }
     }

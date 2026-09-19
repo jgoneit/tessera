@@ -181,6 +181,26 @@ struct DirectNavigationStateTests {
         #expect(state.lastConfirmedFrame == constrainedAX)
     }
 
+    @Test("App-constrained maximum preserves screen navigation until a manual change")
+    func constrainedMaximumKeepsLogicalState() {
+        var state = DirectNavigationState(layouts: [.twoByTwo, .threeByTwo],
+            windowFrame: arbitraryWindow(inColumn: 2, layout: .threeByTwo), visibleFrame: display)
+        #expect(state.maximize().target == .maximized)
+        let limited = CGRect(x: -1200, y: 40, width: 1100, height: 700)
+        state.record(actualFrame: limited)
+        #expect(state.move(.up)?.target == .screenTop)
+        state.record(actualFrame: limited)
+        #expect(state.move(.down)?.target == .maximized)
+        #expect(state.move(.left) == placement(.column(1), layout: .twoByTwo))
+        state.record(actualFrame: limited)
+        #expect(state.matchesLastConfirmed(limited))
+        #expect(!state.matchesLastConfirmed(limited.offsetBy(dx: 1, dy: 0)))
+        #expect(state.maximize().target == .maximized)
+        #expect(state.maximize().target == .maximized)
+        #expect(state.move(.down)?.target == .screenBottom)
+        #expect(state.move(.right) == placement(.zone(4), layout: .twoByTwo))
+    }
+
     @Test("A completion from the prior grid cannot replace the latest selected grid")
     func earlierGridCompletionPreservesLatestSelection() throws {
         let initial = try GridGeometry.frame(in: display, layout: .threeByTwo,

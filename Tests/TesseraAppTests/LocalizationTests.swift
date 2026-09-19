@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import TesseraCore
 @testable import TesseraApp
 
 @Suite("English and Korean localization")
@@ -20,6 +21,31 @@ struct LocalizationTests {
         #expect(L10n.resolvedLanguage(.ko, preferredLanguages: ["en-US"]) == .ko)
         #expect(L10n.text("Window arranged.", language: .en) == "Window arranged.")
         #expect(L10n.text("Window arranged.", language: .ko) == "창을 배치했습니다.")
+    }
+
+    @Test("Size-adjusted success has the approved concise wording in both languages")
+    func sizeAdjustedFeedback() {
+        let key = "Arranged · Adjusted to app size"
+        #expect(L10n.text(key, language: .en) == key)
+        #expect(L10n.text(key, language: .ko) == "배치됨 · 앱 크기에 맞춤")
+    }
+
+    @Test("Screen-wide labels describe the screen without an irrelevant grid prefix")
+    func screenWideLabels() {
+        let labels: [(PlacementTarget, String, String)] = [
+            (.maximized, "Maximize", "최대화"),
+            (.screenTop, "Top half of screen", "화면 위쪽 절반"),
+            (.screenBottom, "Bottom half of screen", "화면 아래쪽 절반"),
+        ]
+        for layout in LayoutPreset.allCases {
+            for (target, english, korean) in labels {
+                let placement = GridPlacement(layout: layout, target: target)
+                #expect(placement.localizedLabel(language: .en) == english)
+                #expect(placement.localizedLabel(language: .ko) == korean)
+            }
+            #expect(GridPlacement(layout: layout, target: .column(1)).localizedLabel(language: .en)
+                == "\(layout.title) · Column 1 · full height")
+        }
     }
 
     @Test("Stored language decoding does not coerce unsupported values")
