@@ -26,12 +26,12 @@ jobs:
           node-version: '24'
       - name: Check the interactive demo
         run: |
-          node --test website/navigation.test.mjs
+          node --test website/*.test.mjs
           node --check website/app.mjs
       - name: Stage public files
         run: |
           mkdir -p "$RUNNER_TEMP/tessera-site"
-          cp website/index.html website/styles.css website/app.mjs website/navigation.mjs website/mark.svg "$RUNNER_TEMP/tessera-site/"
+          cp website/index.html website/styles.css website/app.mjs website/navigation.mjs website/i18n.mjs website/mark.svg "$RUNNER_TEMP/tessera-site/"
           touch "$RUNNER_TEMP/tessera-site/.nojekyll"
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
