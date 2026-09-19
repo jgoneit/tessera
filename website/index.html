@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tessera — 방향키로 원하는 자리까지</title>
+  <meta name="description" content="자주 쓰는 격자를 골라두고 방향키로 창을 옮기세요. macOS를 위한 격자 창 배치 앱, Tessera." />
+  <meta property="og:title" content="Tessera — 방향키로 원하는 자리까지" />
+  <meta property="og:description" content="절반, 3분할, 4분할을 같은 방향키로. 위칸부터 열 전체까지 원하는 자리에서 멈추세요." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="./mark.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <svg class="svg-definitions" aria-hidden="true"><defs>
+    <symbol id="tessera-mark" viewBox="0 0 18 18"><rect x="1" y="2" width="7" height="14" rx="1.5"/><rect x="10" y="2" width="7" height="6" rx="1.5"/><rect x="10" y="10" width="7" height="6" rx="1.5"/></symbol>
+    <symbol id="download-mark" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M12 3v12m-5-5 5 5 5-5"/></symbol>
+  </defs></svg>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <header class="navbar">
+    <div class="container nav-content">
+      <a href="#top" class="brand" aria-label="Tessera 처음으로">
+        <span class="brand-mark"><svg width="15" height="15" aria-hidden="true"><use href="#tessera-mark"/></svg></span>
+        <span>Tessera</span><span class="version-pill">alpha</span>
+      </a>
+      <nav class="nav-links" aria-label="주 메뉴">
+        <a href="#demo" class="nav-link">직접 해보기</a>
+        <a href="#shortcuts" class="nav-link">사용법</a>
+        <a href="#install" class="nav-link">설치</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="라이트 테마로 전환" title="테마 전환"><span id="themeIcon" aria-hidden="true">☼</span></button>
+        <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.1/Tessera-0.1.0-arm64.dmg" class="btn-nav-download"><svg class="download-icon" width="14" height="14" aria-hidden="true"><use href="#download-mark"/></svg><span>다운로드</span></a>
+      </div>
+    </div>
+  </header>
+  <main id="top">
+    <section class="hero">
+      <div class="container">
+        <div class="release-badge"><span class="badge-tag">Tessera</span><span>macOS를 위한 창 배치</span></div>
+        <h1 class="hero-h1">방향키로 완성하는<br />macOS 격자 창 분할</h1>
+        <p class="hero-sub">자주 쓰는 격자를 골라두고, 방향키로 창을 옮기세요.<br />위·아래 한 칸부터 열 전체까지, 원하는 자리에서 멈추면 돼요.</p>
+        <div class="hero-cta-wrapper">
+          <div class="hero-buttons">
+            <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.1/Tessera-0.1.0-arm64.dmg" class="btn-primary"><svg class="download-icon" width="17" height="17" aria-hidden="true"><use href="#download-mark"/></svg><span>Mac용 Tessera 다운로드</span></a>
+            <a href="#demo" class="btn-secondary">먼저 움직여보기 <span aria-hidden="true">↓</span></a>
+          </div>
+          <div class="hero-specs"><span>macOS 14 이상</span><span aria-hidden="true">·</span><span>Apple Silicon</span><span aria-hidden="true">·</span><span>알파 버전</span></div>
+        </div>
+
+        <section class="sandbox-frame" id="demo" aria-label="창 배치 체험">
+          <div class="mock-menubar" aria-hidden="true">
+            <div class="menubar-group"><strong>메모</strong><span>파일</span><span>편집</span><span>보기</span></div>
+            <div class="menubar-group"><span class="menubar-tessera-item"><svg width="16" height="16"><use href="#tessera-mark"/></svg></span><span>09:41</span></div>
+          </div>
+          <div class="demo-toolbar">
+            <fieldset class="layout-options"><legend>사용할 격자</legend>
+              <label><input type="checkbox" name="layout" value="2" /><span>2×2</span></label>
+              <label><input type="checkbox" name="layout" value="3" checked /><span>3×2</span></label>
+              <label><input type="checkbox" name="layout" value="4" /><span>4×2</span></label>
+            </fieldset>
+            <span class="demo-note">여러 개를 함께 골라도 좋아요</span>
+          </div>
+          <div class="demo-interaction" tabindex="0" role="group" aria-label="방향키로 창 배치 체험" aria-describedby="demoKeyboardHelp">
+            <div class="mock-desktop">
+              <div class="windows-grid" id="desktopStage" aria-hidden="true">
+                <div class="layout-guides" id="layoutGuides"></div>
+                <div class="app-window" id="demoWindow">
+                  <div class="window-bar"><span class="dot close"></span><span class="dot min"></span><span class="dot max"></span><span class="window-title">메모</span></div>
+                  <div class="window-body">
+                    <div class="note-date">오늘의 메모</div>
+                    <div class="note-title">조금 더 편한<br />나의 작업 공간.</div>
+                    <div class="note-rule"></div>
+                    <div class="note-line"><span class="note-check">✓</span><span>할 일 정리하기</span></div>
+                    <div class="note-line"><span class="note-check">✓</span><span>필요한 창 나란히 놓기</span></div>
+                    <div class="note-line"><span class="note-circle"></span><span>하나씩 시작하기</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="demo-controls">
+              <div class="hud-controller">
+                <div class="hud-top-row"><span class="hud-label">현재 배치</span><span class="hud-layout" id="currentLayout">3×2</span></div>
+                <div class="hud-cards" id="hudCards" role="group" aria-label="3×2 격자 영역 선택"></div>
+                <p class="demo-selection" id="selectionLabel" role="status" aria-live="polite" aria-atomic="true">3×2 · 2열 전체</p>
+              </div>
+              <div class="demo-instructions">
+                <p class="demo-instruction-title">방향키를 눌러보세요</p>
+                <p id="demoKeyboardHelp">아래 버튼을 누르거나, 이 영역을 클릭하고<br class="desktop-break" /> 키보드 방향키로 움직여보세요.</p>
+                <div class="arrow-controls" role="group" aria-label="이동 방향">
+                  <button type="button" class="arrow-key" data-direction="left" aria-label="왼쪽으로 이동">←</button>
+                  <button type="button" class="arrow-key" data-direction="up" aria-label="위로 한 단계 이동">↑</button>
+                  <button type="button" class="arrow-key" data-direction="down" aria-label="아래로 한 단계 이동">↓</button>
+                  <button type="button" class="arrow-key" data-direction="right" aria-label="오른쪽으로 이동">→</button>
+                </div>
+                <p class="height-guide"><span data-height="top">위칸</span><span aria-hidden="true">↔</span><span data-height="full" class="active">열 전체</span><span aria-hidden="true">↔</span><span data-height="bottom">아래칸</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="demo-caption">웹에서 미리 체험하는 모습이에요. 앱에서는 <kbd>⌃ Control</kbd> + <kbd>⌥ Option</kbd> + 방향키로 움직여요.</div>
+          <noscript><p class="demo-caption">창 배치 체험에는 JavaScript가 필요해요. 아래 사용법과 다운로드는 그대로 이용할 수 있어요.</p></noscript>
+        </section>
+      </div>
+    </section>
+
+    <section class="section-py" id="shortcuts">
+      <div class="container">
+        <div class="section-head"><div class="section-eyebrow">이렇게 사용해요</div><h2 class="section-title">몇 가지 방향만 기억하세요.</h2></div>
+        <div class="shortcuts-panel">
+          <div class="shortcut-row"><div><div class="shortcut-label">옆으로, 원하는 자리까지</div><div class="shortcut-desc">선택한 격자를 따라 좌우로 이동해요. 끝에 닿으면 반대쪽부터 이어져요.</div></div><div class="shortcut-keys" aria-label="Control Option 왼쪽 또는 오른쪽"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>←</kbd><span>/</span><kbd>→</kbd></div></div>
+          <div class="shortcut-row"><div><div class="shortcut-label">높이도 한 단계씩</div><div class="shortcut-desc">위칸 ↔ 열 전체 ↔ 아래칸. 키를 놓았다가 다시 누르면 다음 높이로 바뀌어요.</div></div><div class="shortcut-keys" aria-label="Control Option 위 또는 아래"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>↑</kbd><span>/</span><kbd>↓</kbd></div></div>
+          <div class="shortcut-row"><div><div class="shortcut-label">원하는 칸을 바로 선택해도 돼요</div><div class="shortcut-desc">메뉴바의 ‘창 배치…’에서 칸을 클릭하거나 숫자를 누르세요.<br />2×2는 1–4, 3×2는 1–6, 4×2는 1–8을 사용해요.</div></div><div class="shortcut-keys"><span class="number-hint">숫자 또는 클릭</span></div></div>
+        </div>
+      </div>
+    </section>
+    <section class="section-py install-section" id="install">
+      <div class="container">
+        <div class="section-head"><div class="section-eyebrow">시작하기</div><h2 class="section-title">설치하고, 창 하나를 옮겨보세요.</h2></div>
+        <div class="install-grid">
+          <div class="install-step"><div class="step-header"><span class="step-num">01</span><h3>응용 프로그램에 넣기</h3></div><p>다운로드한 DMG를 열고 Tessera를 Applications 폴더로 드래그하세요.</p></div>
+          <div class="install-step"><div class="step-header"><span class="step-num">02</span><h3>창 이동 허용하기</h3></div><p>Tessera를 실행하고 안내에 따라 손쉬운 사용 권한을 허용하세요. 앱은 메뉴바에 나타나요.</p></div>
+          <div class="install-step"><div class="step-header"><span class="step-num">03</span><h3>방향키로 시작하기</h3></div><p>움직일 창을 클릭한 뒤 Control + Option을 누른 채 방향키를 눌러보세요.</p></div>
+        </div>
+        <p class="install-help">현재는 알파 버전이에요. 처음 실행이 막히거나 설치가 어렵다면 <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.1">설치 안내를 확인하세요 ↗</a></p>
+      </div>
+    </section>
+  </main>
+  <footer class="footer"><div class="container footer-content"><span>Tessera · 방향키로 원하는 자리까지.</span><div class="footer-links"><a href="https://github.com/jgoneit/tessera">GitHub ↗</a><a href="https://github.com/jgoneit/tessera/releases">버전 기록 ↗</a></div></div></footer>
+</body>
+</html>
