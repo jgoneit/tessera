@@ -63,3 +63,17 @@ Safari/Chrome 별도 브라우저와 VoiceOver 직접 조작은 수행하지 않
   웹 동작은 별도 Node 검사와 브라우저 검증으로 구분한다.
 - 실제 배포 결과는 GitHub Actions의 `Publish Tessera website` 실행에 기록하며,
   게시 후 공개 URL과 모듈 응답, 데모 조작을 별도로 확인한다.
+
+## 최초 공개 및 격자 선택 보완
+
+- 최초 공개 commit `158463d2d18a92365fbcb36b0d26fbf05f32d476`의 Actions 실행
+  <https://github.com/jgoneit/tessera/actions/runs/35437511529>이 성공했다.
+- <https://jgoneit.github.io/tessera/>의 공개 파일 다섯 개는 익명 요청에서 HTTP 200을
+  반환했고 해당 commit의 파일 내용과 일치했다. `.mjs`는 `text/javascript`로 응답했다.
+- 사용자 추가 요청에 따라 새로 체크한 격자를 즉시 미리보기 대상으로 선택하도록 바꿨다.
+  이전 선택 목록과 높이는 유지하며, 이후 방향 입력은 모든 선택 격자를 순회한다.
+- 추가 회귀 테스트 3개를 포함한 Node 검사 19개가 통과했다.
+- 로컬 브라우저에서 3×2 초기 상태에 2×2를 체크하면 `2×2 · 1열 전체`로,
+  아래칸 이동 후 4×2를 체크하면 `4×2 · 1열 아래칸`과 8개 번호로 즉시 바뀌었다.
+  세 격자는 모두 선택된 채 유지됐고 다음 → 입력은 `3×2 · 1열 아래칸`으로 이동했다.
+- 이 보완은 별도 Basic Task `tessera-preview-layout-selection-20260919`로 검증한다.
