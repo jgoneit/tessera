@@ -44,6 +44,19 @@ struct DirectNavigationState: Sendable {
         return navigation.selectedPlacement
     }
 
+    /// Reapply maximize even if already selected; an app may have adjusted its size.
+    mutating func maximize() -> GridPlacement {
+        navigation.maximize()
+        return navigation.selectedPlacement
+    }
+
+    mutating func apply(_ action: PlacementAction) -> GridPlacement? {
+        switch action {
+        case .direction(let direction): move(direction)
+        case .maximize: maximize()
+        }
+    }
+
     /// App constraints update the observed frame while preserving accepted steps.
     mutating func record(actualFrame: CGRect) {
         lastConfirmedFrame = actualFrame

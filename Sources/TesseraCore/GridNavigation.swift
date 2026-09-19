@@ -1,10 +1,13 @@
 import Foundation
 import CoreGraphics
 
-/// Zone and column identifiers are both one-based. Columns span both grid rows.
+/// Zone and column identifiers are both one-based. Screen targets span all columns.
 public enum PlacementTarget: Equatable, Sendable {
     case zone(Int)
     case column(Int)
+    case maximized
+    case screenTop
+    case screenBottom
 }
 
 /// An immutable destination: the target's identifiers are local to its layout.
@@ -52,6 +55,7 @@ public struct GridNavigation: Equatable, Sendable {
     private let candidates: [Candidate]
     private var candidateIndex = 0
     private var height: Height = .full
+    private var isScreenWidth = false
     private var initialHorizontalTargets: InitialHorizontalTargets?
 
     public var layout: LayoutPreset { candidates[candidateIndex].layout }
@@ -98,6 +102,22 @@ public struct GridNavigation: Equatable, Sendable {
         guard isFinitePositiveRect(windowFrame), isFinitePositiveRect(visibleFrame),
               windowFrame.midX.isFinite else { return }
 
+        // Screen-wide placements take precedence and do not depend on the
+        // currently enabled grid. The retained candidate is only a preview.
+        let screenTargets: [(PlacementTarget, Height)] = [
+            (.maximized, .full), (.screenTop, .top), (.screenBottom, .bottom),
+        ]
+        for (target, matchedHeight) in screenTargets {
+            if let frame = try? GridGeometry.frame(
+                in: visibleFrame, layout: layout, target: target, gap: gap, scale: scale
+            ), Self.matchesFrame(windowFrame, frame) {
+                candidateIndex = nearestCenterCandidate
+                height = matchedHeight
+                isScreenWidth = true
+                return
+            }
+        }
+
         for (index, candidate) in candidates.enumerated() {
             let targets: [(PlacementTarget, Height)] = [
                 (.zone(candidate.column), .top),
@@ -131,7 +151,14 @@ public struct GridNavigation: Equatable, Sendable {
     }
 
     public var selectedTarget: PlacementTarget {
-        switch height {
+        if isScreenWidth {
+            return switch height {
+            case .top: .screenTop
+            case .full: .maximized
+            case .bottom: .screenBottom
+            }
+        }
+        return switch height {
         case .top: .zone(column)
         case .full: .column(column)
         case .bottom: .zone(layout.columns + column)
@@ -144,7 +171,33 @@ public struct GridNavigation: Equatable, Sendable {
         switch selectedTarget {
         case .zone(let id): [id]
         case .column(let id): [id, layout.columns + id]
+        case .maximized: Array(1...(layout.columns * layout.rows))
+        case .screenTop: Array(1...layout.columns)
+        case .screenBottom: Array((layout.columns + 1)...(layout.columns * layout.rows))
         }
+    }
+
+    /// Sets a screen-wide full-height logical state. Callers may reapply its
+    /// frame even when this returns false; maximizing is not a restore toggle.
+    @discardableResult
+    public mutating func maximize() -> Bool {
+        let changed = !isScreenWidth || height != .full
+        candidateIndex = nearestCenterCandidate
+        height = .full
+        isScreenWidth = true
+        initialHorizontalTargets = nil
+        return changed
+    }
+
+    private var nearestCenterCandidate: Int {
+        var closest = 0
+        for index in 1..<candidates.count {
+            let previous = candidates[index - 1].normalizedCenter
+            let next = candidates[index].normalizedCenter
+            guard 0.5 > previous + (next - previous) / 2 else { break }
+            closest = index
+        }
+        return closest
     }
 
     /// Horizontal movement follows candidate order, wraps, and retains height
@@ -155,11 +208,21 @@ public struct GridNavigation: Equatable, Sendable {
     public mutating func move(_ direction: GridDirection) -> Bool {
         switch direction {
         case .left:
-            candidateIndex = initialHorizontalTargets?.left
-                ?? (candidateIndex == 0 ? candidates.count - 1 : candidateIndex - 1)
+            if isScreenWidth {
+                candidateIndex = candidates.lastIndex(where: { $0.normalizedCenter < 0.5 }) ?? candidates.count - 1
+            } else {
+                candidateIndex = initialHorizontalTargets?.left
+                    ?? (candidateIndex == 0 ? candidates.count - 1 : candidateIndex - 1)
+            }
+            isScreenWidth = false
         case .right:
-            candidateIndex = initialHorizontalTargets?.right
-                ?? (candidateIndex == candidates.count - 1 ? 0 : candidateIndex + 1)
+            if isScreenWidth {
+                candidateIndex = candidates.firstIndex(where: { $0.normalizedCenter > 0.5 }) ?? 0
+            } else {
+                candidateIndex = initialHorizontalTargets?.right
+                    ?? (candidateIndex == candidates.count - 1 ? 0 : candidateIndex + 1)
+            }
+            isScreenWidth = false
         case .up:
             switch height {
             case .top: return false

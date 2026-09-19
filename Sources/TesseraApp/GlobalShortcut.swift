@@ -12,6 +12,11 @@ struct Shortcut: Codable, Hashable, Sendable {
         modifiers: UInt32(controlKey | optionKey)
     )
 
+    static let defaultMaximize = Shortcut(
+        keyCode: UInt32(kVK_Return),
+        modifiers: UInt32(controlKey | optionKey)
+    )
+
     static let allowedModifiers = UInt32(cmdKey | controlKey | optionKey | shiftKey)
 
     var displayString: String {
@@ -76,12 +81,33 @@ struct Shortcut: Codable, Hashable, Sendable {
     ]
 }
 
+enum PlacementAction: CaseIterable, Equatable, Sendable {
+    case direction(GridDirection)
+    case maximize
+
+    static let allCases: [PlacementAction] = GridDirection.allCases.map(PlacementAction.direction) + [.maximize]
+
+    var displayName: String {
+        switch self {
+        case .direction(.left): L10n.text("Left")
+        case .direction(.right): L10n.text("Right")
+        case .direction(.up): L10n.text("Up")
+        case .direction(.down): L10n.text("Down")
+        case .maximize: L10n.text("Maximize")
+        }
+    }
+
+    var repeatsHorizontally: Bool {
+        self == .direction(.left) || self == .direction(.right)
+    }
+}
+
 enum ShortcutRegistrationError: LocalizedError {
     case invalid(String)
     case systemConflict
     case alreadyRegistered
     case carbon(OSStatus)
-    case binding(GridDirection, String)
+    case binding(PlacementAction, String)
 
     var errorDescription: String? {
         switch self {
@@ -89,8 +115,8 @@ enum ShortcutRegistrationError: LocalizedError {
         case .systemConflict: return L10n.text("This shortcut is already used by macOS. Choose another combination.")
         case .alreadyRegistered: return L10n.text("Another app is using this shortcut. Choose another combination.")
         case .carbon(let status): return L10n.format("The shortcut could not be registered (error %ld).", Int(status))
-        case .binding(let direction, let message):
-            return L10n.format("%@: %@", L10n.text(String(describing: direction).capitalized), message)
+        case .binding(let action, let message):
+            return L10n.format("%@: %@", action.displayName, message)
         }
     }
 }
@@ -100,6 +126,16 @@ struct DirectionalShortcuts: Codable, Equatable, Sendable {
     var right: Shortcut
     var up: Shortcut
     var down: Shortcut
+    var maximize: Shortcut?
+
+    init(left: Shortcut, right: Shortcut, up: Shortcut, down: Shortcut,
+         maximize: Shortcut? = .defaultMaximize) {
+        self.left = left
+        self.right = right
+        self.up = up
+        self.down = down
+        self.maximize = maximize
+    }
 
     static let `default` = DirectionalShortcuts(
         left: Shortcut(keyCode: 123, modifiers: UInt32(controlKey | optionKey)),
@@ -127,17 +163,33 @@ struct DirectionalShortcuts: Codable, Equatable, Sendable {
         }
     }
 
+    subscript(_ action: PlacementAction) -> Shortcut? {
+        get {
+            switch action {
+            case .direction(let direction): self[direction]
+            case .maximize: maximize
+            }
+        }
+        set {
+            switch action {
+            case .direction(let direction):
+                if let newValue { self[direction] = newValue }
+            case .maximize: maximize = newValue
+            }
+        }
+    }
+
     var validationMessage: String? { validationError?.errorDescription }
 
     var validationError: ShortcutRegistrationError? {
-        var seen: [Shortcut: GridDirection] = [:]
-        for direction in GridDirection.allCases {
-            let shortcut = self[direction]
-            if let message = shortcut.validationMessage { return .binding(direction, message) }
+        var seen: [Shortcut: PlacementAction] = [:]
+        for action in PlacementAction.allCases {
+            guard let shortcut = self[action] else { continue }
+            if let message = shortcut.validationMessage { return .binding(action, message) }
             if let previous = seen[shortcut] {
-                return .binding(direction, L10n.format("This shortcut is already assigned to %@.", L10n.text(String(describing: previous).capitalized)))
+                return .binding(action, L10n.format("This shortcut is already assigned to %@.", previous.displayName))
             }
-            seen[shortcut] = direction
+            seen[shortcut] = action
         }
         return nil
     }
@@ -259,13 +311,13 @@ final class CarbonShortcutBackend: ShortcutRegistrationBackend {
 
 @MainActor
 final class GlobalShortcuts {
-    var onTrigger: ((GridDirection) -> Void)?
+    var onTrigger: ((PlacementAction) -> Void)?
     var onRecord: ((Shortcut) -> Void)?
     var onError: ((String) -> Void)?
 
     private struct Registration {
         let id: UInt32
-        let direction: GridDirection
+        let action: PlacementAction
         let validAfter: TimeInterval
     }
     private struct HeldKey { var suppressed: Bool }
@@ -311,20 +363,23 @@ final class GlobalShortcuts {
     func register(_ bindings: DirectionalShortcuts) throws {
         if let error = bindings.validationError { throw error }
         retryRetiredRegistrations()
-        if registrations.count == GridDirection.allCases.count,
-           GridDirection.allCases.allSatisfy({ registrations[bindings[$0]]?.direction == $0 }) { return }
+        let actions = PlacementAction.allCases.filter { bindings[$0] != nil }
+        if registrations.count == actions.count,
+           actions.allSatisfy({ action in
+               bindings[action].map { registrations[$0]?.action == action } ?? false
+           }) { return }
         var added: [Shortcut: UInt32] = [:]
         do {
-            for direction in GridDirection.allCases {
-                let shortcut = bindings[direction]
+            for action in actions {
+                guard let shortcut = bindings[action] else { continue }
                 guard registrations[shortcut] == nil else { continue }
                 guard Self.nextID < UInt32.max else {
-                    throw ShortcutRegistrationError.binding(direction, L10n.text("Restart Tessera before changing more shortcuts."))
+                    throw ShortcutRegistrationError.binding(action, L10n.text("Restart Tessera before changing more shortcuts."))
                 }
                 Self.nextID += 1
                 let id = Self.nextID
                 do { try backend.register(shortcut, id: id) }
-                catch { throw ShortcutRegistrationError.binding(direction, error.localizedDescription) }
+                catch { throw ShortcutRegistrationError.binding(action, error.localizedDescription) }
                 added[shortcut] = id
             }
         } catch {
@@ -335,10 +390,10 @@ final class GlobalShortcuts {
         cancelInput()
         let timestamp = clock.now
         var replacement: [Shortcut: Registration] = [:]
-        for direction in GridDirection.allCases {
-            let shortcut = bindings[direction]
+        for action in actions {
+            guard let shortcut = bindings[action] else { continue }
             guard let id = registrations[shortcut]?.id ?? added[shortcut] else { continue }
-            replacement[shortcut] = Registration(id: id, direction: direction, validAfter: timestamp)
+            replacement[shortcut] = Registration(id: id, action: action, validAfter: timestamp)
         }
         let removedIDs = registrations.filter { replacement[$0.key] == nil }.map { $0.value.id }
         registrations = replacement
@@ -347,6 +402,24 @@ final class GlobalShortcuts {
             held.removeValue(forKey: id)
             lastEventTimes.removeValue(forKey: id)
             retire(id)
+        }
+    }
+
+    /// Only the first migration may omit a conflicting new Maximize chord.
+    /// Later edits use register(_:) so an unsuccessful batch keeps the old set.
+    func registerAtStartup(_ bindings: DirectionalShortcuts, allowMaximizeFallback: Bool) throws
+        -> (bindings: DirectionalShortcuts, warning: String?) {
+        do {
+            try register(bindings)
+            return (bindings, nil)
+        } catch ShortcutRegistrationError.binding(.maximize, let message) {
+            guard allowMaximizeFallback, bindings.maximize != nil else {
+                throw ShortcutRegistrationError.binding(.maximize, message)
+            }
+            var fallback = bindings
+            fallback.maximize = nil
+            try register(fallback)
+            return (fallback, L10n.format("Maximize shortcut was not assigned. Your direction shortcuts are unchanged. %@", message))
         }
     }
 
@@ -395,10 +468,10 @@ final class GlobalShortcuts {
             return
         }
         let generation = repeatGeneration
-        shortcutLogger.notice("Directional hotkey accepted: id=\(event.id, privacy: .public) direction=\(String(describing: registration.direction), privacy: .public)")
-        onTrigger?(registration.direction)
+        shortcutLogger.notice("Placement hotkey accepted: id=\(event.id, privacy: .public) action=\(String(describing: registration.action), privacy: .public)")
+        onTrigger?(registration.action)
         guard generation == repeatGeneration, held[event.id]?.suppressed == false, !recording,
-              registration.direction == .left || registration.direction == .right,
+              registration.action.repeatsHorizontally,
               clock.repeatDelay.isFinite, clock.repeatDelay >= 0,
               clock.repeatInterval.isFinite, clock.repeatInterval > 0 else { return }
         repeatingID = event.id
@@ -417,7 +490,7 @@ final class GlobalShortcuts {
                 self.stopRepeat()
                 return
             }
-            self.onTrigger?(registration.direction)
+            self.onTrigger?(registration.action)
             guard self.repeatGeneration == generation, self.repeatingID == id else { return }
             self.scheduleRepeat(id: id, generation: generation, after: self.clock.repeatInterval)
         }

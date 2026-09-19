@@ -12,8 +12,8 @@ public enum GridGeometryError: Error, Equatable, Sendable {
 }
 
 public enum GridGeometry {
-    /// Supports a single zone or a full-height column. A column includes the
-    /// space between its two zones, retaining only the outer top/bottom gaps.
+    /// Columns and screen-width halves include the gaps between their zones.
+    /// Maximizing reserves no gap; all targets share inward pixel alignment.
     public static func frame(
         in visibleFrame: CGRect,
         layout: LayoutPreset,
@@ -34,6 +34,13 @@ public enum GridGeometry {
                 zoneID: (layout.rows - 1) * layout.columns + column, gap: gap, scale: scale
             )
             return top.union(bottom)
+        case .maximized:
+            guard gap.isFinite, gap >= 0 else { throw GridGeometryError.invalidGap }
+            return try frame(in: visibleFrame, columns: 1, rows: 1, zoneID: 1, gap: 0, scale: scale)
+        case .screenTop:
+            return try frame(in: visibleFrame, columns: 1, rows: 2, zoneID: 1, gap: gap, scale: scale)
+        case .screenBottom:
+            return try frame(in: visibleFrame, columns: 1, rows: 2, zoneID: 2, gap: gap, scale: scale)
         }
     }
 
@@ -51,12 +58,24 @@ public enum GridGeometry {
         gap: CGFloat,
         scale: CGFloat
     ) throws -> CGRect {
+        try frame(in: visibleFrame, columns: layout.columns, rows: layout.rows,
+            zoneID: zoneID, gap: gap, scale: scale)
+    }
+
+    private static func frame(
+        in visibleFrame: CGRect,
+        columns: Int,
+        rows: Int,
+        zoneID: Int,
+        gap: CGFloat,
+        scale: CGFloat
+    ) throws -> CGRect {
         guard isFinitePositiveRect(visibleFrame) else {
             throw GridGeometryError.invalidVisibleFrame
         }
         guard gap.isFinite, gap >= 0 else { throw GridGeometryError.invalidGap }
         guard scale.isFinite, scale > 0 else { throw GridGeometryError.invalidScale }
-        guard (1...(layout.columns * layout.rows)).contains(zoneID) else {
+        guard (1...(columns * rows)).contains(zoneID) else {
             throw GridGeometryError.invalidZoneID(zoneID)
         }
 
@@ -76,16 +95,16 @@ public enum GridGeometry {
         let maxX = Int(pixelValues[2].rounded(.down))
         let maxY = Int(pixelValues[3].rounded(.down))
         let gapPixels = Int(pixelValues[4].rounded(.toNearestOrAwayFromZero))
-        let availableWidth = maxX - minX - (layout.columns + 1) * gapPixels
-        let availableHeight = maxY - minY - (layout.rows + 1) * gapPixels
-        guard availableWidth >= layout.columns, availableHeight >= layout.rows else {
+        let availableWidth = maxX - minX - (columns + 1) * gapPixels
+        let availableHeight = maxY - minY - (rows + 1) * gapPixels
+        guard availableWidth >= columns, availableHeight >= rows else {
             throw GridGeometryError.insufficientSpace
         }
 
-        let column = (zoneID - 1) % layout.columns
-        let row = (zoneID - 1) / layout.columns
-        let horizontal = partition(availableWidth, count: layout.columns, index: column)
-        let vertical = partition(availableHeight, count: layout.rows, index: row)
+        let column = (zoneID - 1) % columns
+        let row = (zoneID - 1) / columns
+        let horizontal = partition(availableWidth, count: columns, index: column)
+        let vertical = partition(availableHeight, count: rows, index: row)
         let left = minX + gapPixels + horizontal.offset + column * gapPixels
         let top = maxY - gapPixels - vertical.offset - row * gapPixels
         let result = CGRect(

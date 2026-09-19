@@ -3,11 +3,11 @@ import TesseraCore
 /// Keeps every logical input while target resolution is suspended. Window writes
 /// have their own latest-pending queue; input ordering must not be coalesced here.
 @MainActor
-final class BufferedDirectionInput {
-    typealias Apply = @MainActor (GridDirection) -> Void
+final class BufferedPlacementInput {
+    typealias Apply = @MainActor (PlacementAction) -> Void
     private let prepare: @MainActor () async -> Apply?
     private let onIdle: @MainActor () -> Void
-    private var pending: [GridDirection] = []
+    private var pending: [PlacementAction] = []
     private var task: Task<Void, Never>?
     private var generation = 0
     var isPreparing: Bool { task != nil }
@@ -17,8 +17,8 @@ final class BufferedDirectionInput {
         self.onIdle = onIdle
     }
 
-    func submit(_ direction: GridDirection) {
-        pending.append(direction)
+    func submit(_ action: PlacementAction) {
+        pending.append(action)
         guard task == nil else { return }
         let generation = generation
         task = Task {

@@ -183,3 +183,15 @@
 "Apply shortcuts again to see the current status." = "Apply shortcuts again to see the current status.";
 "Expanded" = "Expanded";
 "Collapsed" = "Collapsed";
+"Maximize" = "Maximize";
+"Top half of screen" = "Top half of screen";
+"Bottom half of screen" = "Bottom half of screen";
+"Window shortcuts" = "Window shortcuts";
+"Choose a different key for each action. Include ⌘, ⌃, or ⌥." = "Choose a different key for each action. Include ⌘, ⌃, or ⌥.";
+"Clear maximize shortcut" = "Clear maximize shortcut";
+"Fill the usable display without gaps. Use arrows to return to the grid." = "Fill the usable display without gaps. Use arrows to return to the grid.";
+"Window shortcuts applied." = "Window shortcuts applied.";
+"Not assigned" = "Not assigned";
+"Record a window shortcut, then use Apply Shortcuts to save all five." = "Record a window shortcut, then use Apply Shortcuts to save all five.";
+"Maximize shortcut was not assigned because a direction already uses it. Your direction shortcuts are unchanged." = "Maximize shortcut was not assigned because a direction already uses it. Your direction shortcuts are unchanged.";
+"Maximize shortcut was not assigned. Your direction shortcuts are unchanged. %@" = "Maximize shortcut was not assigned. Your direction shortcuts are unchanged. %@";

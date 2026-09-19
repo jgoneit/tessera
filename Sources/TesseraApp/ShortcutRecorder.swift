@@ -34,7 +34,7 @@ final class ShortcutRecordingBridge {
 }
 
 struct ShortcutRecorder: NSViewRepresentable {
-    let current: Shortcut
+    let current: Shortcut?
     let label: String
     let bridge: ShortcutRecordingBridge
     let onRecord: (Shortcut) -> Void
@@ -61,7 +61,7 @@ struct ShortcutRecorder: NSViewRepresentable {
 
 @MainActor
 final class ShortcutRecorderButton: NSButton {
-    var current: Shortcut = .default
+    var current: Shortcut? = .default
     var onRecord: ((Shortcut) -> Void)?
     weak var bridge: ShortcutRecordingBridge?
     private(set) var isRecording = false
@@ -82,10 +82,10 @@ final class ShortcutRecorderButton: NSButton {
     override var acceptsFirstResponder: Bool { true }
 
     func refreshTitle() {
-        title = isRecording ? L10n.text("Press shortcut…") : current.displayString
+        title = isRecording ? L10n.text("Press shortcut…") : (current?.displayString ?? L10n.text("Not assigned"))
         toolTip = isRecording
             ? L10n.text("Press a key with Command, Control, or Option. Escape cancels.")
-            : L10n.text("Record a direction shortcut, then use Apply Shortcuts to save all four.")
+            : L10n.text("Record a window shortcut, then use Apply Shortcuts to save all five.")
     }
 
     @objc private func startRecording() {
