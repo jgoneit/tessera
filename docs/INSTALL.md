@@ -25,8 +25,10 @@ macOS 14 이상이 필요합니다. 기본 빌드는 **빌드한 Mac의 아키�
    개인용 응용 프로그램 폴더를 쓰는 경우 `~/Applications`에 복사해도 됩니다.
 4. 복사한 위치의 `Tessera.app`을 실행합니다. 이후에는 설치한 앱을 사용합니다.
 
-Tessera는 **Dock 아이콘이 없는 메뉴바 앱**입니다. 메뉴바 오른쪽의 세 칸 아이콘을 누르면
-설정·창 배치·종료 메뉴를 사용할 수 있습니다. 실행한 뒤 Dock에 아이콘이 없다고 설치 실패로 판단하지 않아도 됩니다.
+Tessera는 **메뉴바 앱**입니다. 메뉴바 오른쪽의 세 칸 아이콘을 누르면 설정·창 배치·종료 메뉴를
+사용할 수 있습니다. 설정 창을 열면 창은 Mission Control에, 앱 아이콘은 Dock·⌘Tab에 표시됩니다.
+설정을 최소화하거나 다른 앱 뒤로 보내도 앱 아이콘은 유지됩니다. 설정 창을 닫으면 메뉴바 전용으로
+돌아가며 Tessera는 계속 실행됩니다. 선택기나 배치 안내만 표시할 때는 Dock 아이콘이 생기지 않습니다.
 
 ## DMG로 설치하기
 
@@ -51,6 +53,17 @@ DMG에는 `Tessera.app`, `/Applications`를 가리키는 링크, 한국어·영�
 다시 확인해야 할 수 있습니다. 시스템 설정에는 켜짐으로 보여도 Tessera가 권한을 요구한다면 기존 Tessera
 항목만 제거하고 **현재 설치한 앱**을 다시 추가한 뒤 Tessera를 재실행해 확인합니다. 다른 앱의 승인에는 손대지 않습니다.
 격자·간격·언어·테마·단축키는 같은 사용자 계정의 기존 설정을 사용합니다.
+
+## 최대화와 화면 반쪽 배치
+
+기본 **⌃⌥Return**으로 현재 창을 메뉴바·Dock을 제외한 사용 가능 영역에 여백 없이 최대화합니다.
+메뉴와 선택기의 **최대화 / Maximize** 버튼으로도 사용할 수 있습니다. 다시 실행해도 최대화를 유지하며,
+macOS의 별도 Spaces 전체화면으로 전환하지 않습니다.
+
+최대화 상태에서 **⌃⌥↑ / ⌃⌥↓**는 화면 위쪽·아래쪽 절반으로 이동합니다. 위쪽 절반에서 아래,
+아래쪽 절반에서 위를 누르면 최대화로 돌아갑니다. **⌃⌥← / ⌃⌥→**는 높이를 유지한 채 선택한
+격자의 열로 진입합니다. 화면 반쪽에는 설정한 간격이 적용됩니다. 최대화 단축키를 등록할 수 없으면
+기존 방향키는 유지되고 설정에 안내가 표시되며, 메뉴·버튼으로 최대화할 수 있습니다.
 
 ## 로컬 DMG 만들기
 
@@ -88,8 +101,10 @@ bash scripts/build-dmg.sh --skip-build
 - Requires macOS 14 or later. The default build targets the current Mac's architecture only.
 - Quit the running Tessera, keep any older app you need, and copy `Tessera.app` to Applications.
   For a DMG, drag the app onto its Applications link, eject the disk, and open the installed copy.
-- Tessera lives in the menu bar and has no Dock icon. Allow the installed app in
-  **System Settings → Privacy & Security → Accessibility**, then use **Check Again** in Tessera Settings.
+- Tessera lives in the menu bar. Opening Settings shows its window in Mission Control and its icon in the Dock and ⌘Tab.
+  The app icon remains while Settings is minimized or behind another app; closing Settings returns to menu bar-only mode.
+- Allow the installed app in **System Settings → Privacy & Security → Accessibility**, then use **Check Again** in Tessera Settings.
+- Use **⌃⌥Return** to maximize, then **⌃⌥↑ / ⌃⌥↓** for screen halves or **⌃⌥← / ⌃⌥→** to enter a selected grid.
 - Run `bash scripts/build-dmg.sh` to build and package, or add `--skip-build` to package an existing verified bundle.
   Output is `dist/Tessera-<version>-<architecture>.dmg`.
 - This is a local ad hoc build without Developer ID signing or Apple notarization. A DMG does not replace

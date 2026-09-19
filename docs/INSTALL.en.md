@@ -26,8 +26,10 @@ been verified to run on Intel Macs.
    You can also copy it to `~/Applications` if you use a personal Applications folder.
 4. Launch `Tessera.app` from the location you copied it to. Use this installed copy from now on.
 
-Tessera is a **menu bar app with no Dock icon**. Click the three-pane icon on the right side of the menu bar
-to access Settings, window placement, and Quit. The absence of a Dock icon after launch does not indicate an installation failure.
+Tessera is a **menu bar app**. Click the three-pane icon on the right side of the menu bar to access Settings,
+window placement, and Quit. Opening Settings shows its window in Mission Control and its app icon in the Dock and ⌘Tab.
+The app icon remains when Settings is minimized or behind another app. Closing Settings returns Tessera to menu bar-only
+mode while the app keeps running. Showing only the picker or placement feedback does not add a Dock icon.
 
 ## Install from a DMG
 
@@ -52,6 +54,17 @@ Moving the app from a development folder to Applications or rebuilding an ad hoc
 permission again. If System Settings shows permission enabled but Tessera still requests access, remove only the old Tessera
 entry, add the **currently installed app** again, and restart Tessera to check. Leave other apps' permissions unchanged.
 Grids, spacing, language, theme, and shortcuts use the existing settings for the same user account.
+
+## Maximize and screen halves
+
+The default **⌃⌥Return** shortcut maximizes the current window to the area available around the menu bar and Dock,
+without a gap. You can also use **Maximize** in the menu or picker. Repeating it keeps the window maximized;
+it does not enter macOS full-screen Spaces.
+
+From maximized, **⌃⌥↑ / ⌃⌥↓** moves to the screen's top or bottom half. Down from the top half or up from the bottom
+half returns to maximized. **⌃⌥← / ⌃⌥→** enters a column in your selected grids while preserving the height selection.
+Screen halves use your configured gap. If the maximize shortcut cannot be registered during migration, the existing
+direction shortcuts stay active and Settings shows a notice; the menu and button remain available.
 
 ## Create a local DMG
 
@@ -91,8 +104,10 @@ notarization when preparing a general release.
 - Requires macOS 14 or later. The default build targets the current Mac's architecture only.
 - Quit the running Tessera, keep any older app you need, and copy `Tessera.app` to Applications.
   For a DMG, drag the app onto its Applications link, eject the disk, and open the installed copy.
-- Tessera lives in the menu bar and has no Dock icon. Allow the installed app in
-  **System Settings → Privacy & Security → Accessibility**, then use **Check Again** in Tessera Settings.
+- Tessera lives in the menu bar. Opening Settings shows its window in Mission Control and its icon in the Dock and ⌘Tab.
+  The app icon remains while Settings is minimized or behind another app; closing Settings returns to menu bar-only mode.
+- Allow the installed app in **System Settings → Privacy & Security → Accessibility**, then use **Check Again** in Tessera Settings.
+- Use **⌃⌥Return** to maximize, then **⌃⌥↑ / ⌃⌥↓** for screen halves or **⌃⌥← / ⌃⌥→** to enter a selected grid.
 - Run `bash scripts/build-dmg.sh` to build and package, or add `--skip-build` to package an existing verified bundle.
   Output is `dist/Tessera-<version>-<architecture>.dmg`.
 - This is a local ad hoc build without Developer ID signing or Apple notarization. A DMG does not replace
