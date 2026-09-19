@@ -80,9 +80,15 @@ Tessera — 로컬 설치 / Local installation
 2. Tessera.app을 옆의 Applications 폴더로 드래그하세요.
    기존 앱을 교체한다면 필요한 이전 버전은 먼저 따로 보관하세요.
 3. 이 디스크를 추출하고 응용 프로그램 폴더의 Tessera를 실행하세요.
-4. Dock 아이콘은 없습니다. 메뉴바의 세 칸 아이콘에서 설정을 여세요.
+4. 메뉴바의 세 칸 아이콘에서 설정을 여세요.
+   설정 창은 Mission Control에, 아이콘은 Dock·⌘Tab에 표시됩니다.
+   설정을 최소화해도 앱 아이콘은 유지되며, 창을 닫으면 메뉴바 전용으로 돌아갑니다.
 5. 시스템 설정 > 개인정보 보호 및 보안 > 손쉬운 사용에서 설치한 Tessera를 허용하세요.
    설정의 새로고침 버튼으로 권한을 확인하세요.
+
+기본 ⌃⌥Return으로 현재 창을 최대화합니다. 최대화 후 ⌃⌥↑/↓는 화면 위/아래 절반,
+⌃⌥←/→는 선택한 격자의 열로 이동합니다. 최대화는 메뉴바·Dock을 제외한 영역을 채우며,
+macOS의 별도 Spaces 전체화면으로 전환하지 않습니다.
 
 이 앱은 로컬 ad hoc 서명이며 Developer ID 서명·Apple 공증을 포함하지 않습니다.
 DMG는 설치 파일 묶음이며 공증이나 macOS 보안 검사를 대신하지 않습니다.
@@ -91,9 +97,15 @@ English
 1. Quit any running Tessera from its menu bar menu.
 2. Drag Tessera.app to Applications. Keep a separate copy of an older app before replacing it.
 3. Eject this disk, then open Tessera from Applications.
-4. Tessera has no Dock icon. Use its three-tile menu bar icon to open Settings.
+4. Use Tessera's three-tile menu bar icon to open Settings.
+   Its Settings window appears in Mission Control, and its icon appears in the Dock and ⌘Tab.
+   The app icon remains when Settings is minimized; closing the window returns to menu bar-only mode.
 5. Allow the installed Tessera in System Settings > Privacy & Security > Accessibility.
    Use the refresh button in Tessera Settings to check access.
+
+The default ⌃⌥Return shortcut maximizes the current window. From maximized, ⌃⌥↑/↓ moves to
+the screen's top/bottom half, and ⌃⌥←/→ enters a column in your selected grids. Maximize fills
+the area available around the menu bar and Dock; it does not enter macOS full-screen Spaces.
 
 This local app is ad hoc signed, without Developer ID signing or Apple notarization.
 A DMG packages the app; it does not replace notarization or macOS security checks.

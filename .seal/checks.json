@@ -3,13 +3,41 @@
   "checks": [
     {
       "name": "unit-tests",
-      "argv": ["swift", "test"],
+      "argv": [
+        "swift",
+        "test"
+      ],
       "required": true,
       "timeout_seconds": 300
     },
     {
       "name": "app-bundle",
-      "argv": ["bash", "scripts/build-app.sh"],
+      "argv": [
+        "bash",
+        "scripts/build-app.sh"
+      ],
+      "required": true,
+      "timeout_seconds": 300
+    },
+    {
+      "name": "website-tests",
+      "argv": [
+        "node",
+        "--test",
+        "website/navigation.test.mjs",
+        "website/i18n.test.mjs",
+        "website/assets.test.mjs"
+      ],
+      "required": true,
+      "timeout_seconds": 300
+    },
+    {
+      "name": "website-syntax",
+      "argv": [
+        "node",
+        "--check",
+        "website/app.mjs"
+      ],
       "required": true,
       "timeout_seconds": 300
     }
