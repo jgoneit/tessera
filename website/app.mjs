@@ -22,6 +22,7 @@ colorScheme.addEventListener('change', () => {
   if (!['light', 'dark'].includes(chosenTheme)) renderTheme(colorScheme.matches ? 'dark' : 'light');
 });
 
+const demo = document.querySelector('#demo');
 const interaction = document.querySelector('.demo-interaction');
 const stage = document.querySelector('#desktopStage');
 const demoWindow = document.querySelector('#demoWindow');
@@ -100,6 +101,7 @@ layoutInputs.forEach(input => input.addEventListener('change', () => {
   const layouts = layoutInputs.filter(item => item.checked).map(item => Number(item.value));
   if (layouts.length) state = setLayouts(state, layouts, input.checked ? Number(input.value) : undefined);
   render();
+  input.focus({ preventScroll: true });
 }));
 directionButtons.forEach(button => button.addEventListener('click', () => {
   button.focus({ preventScroll: true });
@@ -114,14 +116,14 @@ cards.addEventListener('click', event => {
 });
 stage.addEventListener('click', () => interaction.focus({ preventScroll: true }));
 document.addEventListener('pointerdown', event => {
-  if (!interaction.contains(event.target) && interaction.contains(document.activeElement)) {
+  if (!demo.contains(event.target) && demo.contains(document.activeElement)) {
     document.activeElement.blur();
   }
 });
 
 const directions = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
 const clearPressed = () => directionButtons.forEach(button => button.classList.remove('is-pressed'));
-interaction.addEventListener('keydown', event => {
+demo.addEventListener('keydown', event => {
   // The website demo never intercepts Tessera's real global shortcuts.
   if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || event.isComposing) return;
   const direction = directions[event.key];
@@ -142,8 +144,8 @@ interaction.addEventListener('keydown', event => {
     clearPressed();
   }
 });
-interaction.addEventListener('keyup', clearPressed);
-interaction.addEventListener('focusout', clearPressed);
+demo.addEventListener('keyup', clearPressed);
+demo.addEventListener('focusout', clearPressed);
 window.addEventListener('blur', clearPressed);
 document.addEventListener('visibilitychange', clearPressed);
 new ResizeObserver(() => render()).observe(stage);
