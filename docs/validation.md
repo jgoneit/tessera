@@ -477,3 +477,17 @@ Seal Task `tessera-maximize-web-alpha2-20260919`, Run `4ba27a9478e54f3cb0bb97b7b
 DMG SHA-256은 `038aedb6df19a8ab9fa2479bebf96fe7c69065a358382d8d4ee59bfd13d7b92f`입니다.
 빌드 2의 앱 로직은 위에서 실기 확인한 변경이며, 기존 설치본을 재설치하거나 다른 Mac에서
 다운로드·실행하는 검증은 이번 단계에서 수행하지 않았습니다.
+
+공개 검증도 완료했습니다. [PR #3](https://github.com/jgoneit/tessera/pull/3)의 웹 CI가 통과한 뒤
+소스 커밋 `31372b56b1cefde6cea2bd9d9f710066eab39949`로
+[alpha.2 사전 릴리스](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2)를 공개했습니다.
+공개 DMG와 `SHA256SUMS`를 인증 없는 URL로 다시 내려받아 체크섬 일치를 확인했습니다.
+이후 PR을 병합했고, 병합 커밋 `09472a7366929434e0297874789a78646ca6965b`의
+[Pages 실행 35445181648](https://github.com/jgoneit/tessera/actions/runs/35445181648)이 성공했습니다.
+
+공개 [한국어 페이지](https://jgoneit.github.io/tessera/?lang=ko#demo)에서 최대화→2×2 왼쪽 열,
+최대화→위쪽 절반을 확인했습니다. [영어](https://jgoneit.github.io/tessera/?lang=en#demo)로 전환해
+같은 상태가 보존되고 위쪽 절반→최대화→아래쪽 절반으로 이어지는 것을 확인했습니다.
+다운로드 버튼은 alpha.2 DMG를 가리키며 이 확인 중 브라우저 경고·오류 로그는 없었습니다.
+기존 alpha.1과 현재 설치 앱은 보존했습니다. 이 공개 확인은 다른 Mac에서의 설치·실행이나
+다중 화면 실기 완료를 의미하지 않습니다.

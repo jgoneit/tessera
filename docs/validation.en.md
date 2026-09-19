@@ -484,3 +484,17 @@ bilingual installation instructions were checked. Built and mounted executable S
 DMG SHA-256 is `038aedb6df19a8ab9fa2479bebf96fe7c69065a358382d8d4ee59bfd13d7b92f`.
 Build 2 contains the native logic manually verified above; this step did not reinstall the existing app
 or verify download/launch on another Mac.
+
+Publication verification is complete. After [PR #3](https://github.com/jgoneit/tessera/pull/3) passed its web CI,
+[alpha.2](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2) was published as a prerelease from
+source commit `31372b56b1cefde6cea2bd9d9f710066eab39949`. The public DMG and `SHA256SUMS` were downloaded
+again without authentication and their checksum matched. The PR was then merged;
+[Pages run 35445181648](https://github.com/jgoneit/tessera/actions/runs/35445181648) succeeded for merge
+commit `09472a7366929434e0297874789a78646ca6965b`.
+
+The public [Korean page](https://jgoneit.github.io/tessera/?lang=ko#demo) confirmed maximize→left 2×2 column
+and maximize→top half. Switching to [English](https://jgoneit.github.io/tessera/?lang=en#demo) preserved the
+state and continued top half→maximize→bottom half. The download button points to the alpha.2 DMG;
+no browser warning/error logs appeared during these checks. Alpha.1 and the currently installed app remain
+unchanged. Public-page verification does not establish installation/launch on another Mac or completion of
+multi-display runtime coverage.
