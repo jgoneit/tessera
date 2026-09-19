@@ -91,3 +91,5 @@ Safari/Chrome 별도 브라우저와 VoiceOver 직접 조작은 수행하지 않
   데모 선택은 바뀌지 않았다.
 - 기존 Node 테스트 19개와 JavaScript 구문 검사를 통과했다. 이 변경은
   Basic Task `tessera-preview-keyboard-handoff-20260919`로 별도 검증한다.
+- 최초 공개 확인에서 HTML은 갱신됐지만 기존 방문 탭의 키보드 동작이 이전 상태로
+  남았다. 브라우저 캐시를 구분하도록 app script URL에 내용 해시 버전을 추가했다.

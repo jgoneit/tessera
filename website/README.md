@@ -40,6 +40,9 @@ node --test website/navigation.test.mjs
 기존 앱의 Seal 검사와 웹 검증 범위는 `../docs/landing-page-validation.md`에 별도로 기록한다.
 다운로드 링크는 검증된 `v0.1.0-alpha.1` 릴리스를 가리킨다. 새 릴리스로 바꿀 때는
 두 다운로드 링크와 설치 안내 링크를 함께 갱신한다.
+`app.mjs` 변경 시 `index.html`의 script URL에 있는 `v`도 파일의 SHA-256 앞 12자리로
+갱신한다. 기존 방문자가 캐시된 이전 스크립트를 계속 실행하는 것을 막기 위한 값이다.
+`navigation.mjs`를 변경할 때도 해당 import URL의 버전을 갱신한 뒤 app 버전을 갱신한다.
 
 ## GitHub Pages
 
