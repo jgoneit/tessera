@@ -13,6 +13,31 @@ bash scripts/build-app.sh
 open dist/Tessera.app
 ```
 
+## 응용 프로그램 설치와 DMG
+
+일상적으로 사용할 때는 빌드한 `Tessera.app`을 `/Applications`(응용 프로그램)에 복사하고
+그 위치에서 실행합니다. 같은 Mac에 설치하는 데 웹 공개나 Apple Developer Program 가입은 필요하지 않습니다.
+개발용 `dist` 경로의 앱과 설치한 앱을 동시에 실행하지 마세요. 앱은 메뉴바에 상주하며 Dock 아이콘은 표시하지 않습니다.
+
+```sh
+bash scripts/build-dmg.sh
+```
+
+`dist`에 버전·아키텍처가 표시된 DMG를 생성합니다. DMG 안의 Tessera를 Applications로 드래그해 설치합니다.
+이미 검증한 앱을 다시 빌드하지 않고 포장하려면 `bash scripts/build-dmg.sh --skip-build`를 사용합니다.
+설치·업데이트·손쉬운 사용 권한 안내는 [설치 안내](docs/INSTALL.md)를 참고하세요.
+
+현재 앱은 로컬 ad hoc 서명이며 Apple 공증을 받지 않았습니다. DMG는 설치용 포장으로,
+Developer ID 서명·공증을 대신하지 않습니다. 인터넷에서 내려받은 앱은 macOS의 확인 경고로 실행이 차단될 수 있습니다.
+일반 사용자 대상 배포에서 Developer ID 서명과 공증을 사용하려면 Apple Developer Program이 필요합니다.
+[Apple Developer ID 안내](https://developer.apple.com/developer-id/)와
+[Apple의 앱 실행 안내](https://support.apple.com/102445)를 참고하세요.
+
+현재 스크립트는 빌드한 Mac의 아키텍처용 DMG를 만듭니다. Apple Silicon의 `arm64` 빌드를
+Intel Mac용 또는 universal 앱으로 표시하지 않습니다. DMG 생성은 웹 업로드나 공개 릴리스를 수행하지 않습니다.
+
+## 앱 번들
+
 빌드 스크립트는 release 실행 파일·Info.plist·앱 아이콘을 `dist/Tessera.app`에 묶고,
 로컬 ad hoc 서명과 번들 검증을 수행합니다. Xcode 프로젝트 생성이나 별도 패키지 설치는 필요하지 않습니다.
 앱은 Dock 대신 메뉴바의 단색 세 칸 아이콘 하나로 상주합니다. 앱 이름은 표시하지 않으며,
@@ -27,7 +52,7 @@ template 이미지가 메뉴바 배경과 선택 상태에 맞춰 표시됩니�
 
 1. 첫 실행의 설정 화면에서 **설정 열기 / Open Settings**를 선택합니다.
 2. **시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용**에서 Tessera를 허용합니다.
-   목록에 없다면 `+`로 빌드한 `dist/Tessera.app`을 추가합니다.
+   목록에 없다면 `+`로 설치한 `/Applications/Tessera.app`을 추가합니다. 개발용 실행은 실제 `dist/Tessera.app` 경로를 사용합니다.
 3. Tessera 설정으로 돌아와 새로고침 아이콘(**다시 확인 / Check Again**)으로 권한을 확인합니다.
 4. **격자 / Layouts**에서 2×2·3×2·4×2 중 사용할 격자를 하나 이상 선택합니다. 처음에는 3×2만 선택됩니다.
 5. 다른 앱의 일반 창을 활성화하고 다음 방향 단축키를 누릅니다.

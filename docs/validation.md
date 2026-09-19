@@ -11,6 +11,7 @@
 설정·선택기·결과 안내의 UI와 한국어·영어, 시스템·라이트·다크 테마를 지원합니다.
 메뉴바에는 단색 template 아이콘 하나를 표시합니다. 현재 변경은 설정 헤더·권한 상태·여백의 압축,
 키캡 배경의 약한 음영과 선택기의 반응형 조작 안내입니다.
+후속 로컬 설치 변경은 헤더 설명 문구 제거, 응용 프로그램 폴더 설치와 ad hoc DMG 포장입니다.
 이전 버전의 성공을 이번 번들이나 모든 다중 격자 조합의 통과 증거로 확대하지 않습니다.
 
 ## 환경
@@ -19,6 +20,28 @@
 - Swift 6.4, Command Line Tools
 - 최초 탐지 화면: TFG40U12PW 한 대, 5120×2160pt, scale 1, visible frame `(0, 0, 5120, 2130)`
 - 최소 지원 버전 설정: macOS 14. 실제 macOS 14에서의 실행은 별도 미검증입니다.
+
+## 로컬 설치와 DMG — 2026-09-19
+
+- 설정의 로고·앱 이름 아래 설명 문구와 사용하지 않는 한영 번역 항목을 제거했습니다.
+  새 빌드의 접근성 트리에서 헤더가 Tessera·버전만 포함하는 것을 확인했습니다.
+- `TESSERA_UI_PREVIEW_DIR="$PWD/.build/install-previews" swift test`: 174개(Core 57, App 117) 통과.
+  한국어 최소 크기 설정의 대표 렌더에서 설명 제거 후 배치를 확인했습니다.
+  `bash scripts/build-app.sh`: release 앱·번역 리소스·아이콘·Info.plist·ad hoc 서명 검증 통과.
+- 교체 전 개발용 앱은 `.build/tessera-before-install.qbcvqc_x/Tessera.app`에 보존했습니다.
+  `/Applications/Tessera.app`에 복사하고 서명을 검사했으며 원본과 설치본 실행 파일의 SHA-256이 일치합니다.
+  기존 개발 경로 프로세스를 종료한 뒤 설치 경로에서 실행 중인 프로세스를 확인했습니다.
+- 사용자가 macOS 인증을 완료한 뒤 기존 Tessera 접근성 항목을 `/Applications/Tessera.app`으로 갱신했습니다.
+  시스템 설정의 허용 표시와 앱의 ‘창을 배치할 준비가 되었어요’ 상태를 확인했습니다.
+  교체 전후 격자·간격·언어·테마·네 방향 키 값이 동일합니다(단축키 JSON은 객체 내용 비교).
+- `bash scripts/build-dmg.sh --skip-build`: `dist/Tessera-0.1.0-arm64.dmg` 생성 및 `hdiutil verify` 통과.
+  크기는 2,158,858 bytes, SHA-256은 `709094ade6dc9ce83f1c38382a33fdc966f0e7e5c7b893bfa7f0d4e468c1f1a8`입니다.
+  읽기 전용 마운트에서 앱 서명·설치본과의 파일 일치·Applications 링크·한영 설치 안내를 확인하고 추출했습니다.
+- DMG는 로컬 ad hoc Apple Silicon 빌드입니다. Developer ID 서명·Apple 공증·웹 업로드는 수행하지 않았습니다.
+  인터넷 다운로드 후 Gatekeeper 동작, 다른 Mac 설치, Intel·macOS 14 실제 실행은 별도 미검증입니다.
+  이번 설치본의 실제 창 배치 전체와 기존 다중 화면 실기도 미완료로 유지합니다.
+- 기존 Seal Task·Run은 보존하며 이 후속 변경의 Acceptance로 재사용하지 않습니다.
+  미추적 사용자 시안이 있는 worktree이므로 이번 요청의 Seal 자동 활성화는 생략했습니다.
 
 ## 자동 검증
 
