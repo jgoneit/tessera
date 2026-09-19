@@ -6,6 +6,32 @@ import Testing
 struct PlacementResultTests {
     private let requested = CGRect(x: -1511.5, y: 22.5, width: 377.5, height: 470.5)
 
+    @Test("Only exact success and classified size adjustments use brief feedback")
+    func feedbackDuration() {
+        let cases: [(PlacementResult.Outcome, PlacementResult.ConstraintReason?, Duration)] = [
+            (.applied, nil, .seconds(1)),
+            (.constrained, .sizeAdjusted, .seconds(1)),
+            (.constrained, .positionMismatch, .seconds(4)),
+            (.constrained, .outsideVisibleArea, .seconds(4)),
+            (.constrained, nil, .seconds(4)),
+            (.unavailable, nil, .seconds(4)),
+            (.failed, nil, .seconds(4)),
+        ]
+        for (outcome, reason, duration) in cases {
+            let result = PlacementResult(outcome: outcome, message: "Feedback", actualFrame: nil,
+                constraintReason: reason)
+            #expect(result.feedbackDuration == duration)
+        }
+    }
+
+    @Test("Existing result construction leaves the constraint cause unclassified")
+    func defaultConstraintReason() {
+        let result = PlacementResult(outcome: .constrained, message: "Legacy feedback", actualFrame: requested)
+        #expect(result.constraintReason == nil)
+        #expect(result.actualFrame == requested)
+        #expect(result.feedbackDuration == .seconds(4))
+    }
+
     @Test("An exact fractional frame on an offset display is applied")
     func exactFractionalFrame() {
         let actual = CGRect(x: -1511.5, y: 22.5, width: 377.5, height: 470.5)

@@ -31,6 +31,7 @@ private func column(of placement: GridPlacement) -> Int {
     switch placement.target {
     case .column(let column): column
     case .zone(let zone): (zone - 1) % placement.layout.columns + 1
+    case .maximized, .screenTop, .screenBottom: 0
     }
 }
 

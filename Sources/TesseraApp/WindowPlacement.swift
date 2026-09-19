@@ -92,10 +92,28 @@ enum WindowPlacement {
             if PlacementResult.matchesRequestedFrame(actual, frame), contains(actual, in: visibleFrame) {
                 return PlacementResult(outcome: .applied, message: L10n.text("Window arranged."), actualFrame: actual)
             }
-            let message = contains(actual, in: visibleFrame)
-                ? L10n.text("The window did not accept the exact requested size or position. It remains within the usable display area.")
-                : L10n.text("The window did not accept the exact requested size or position. It could not be fitted fully inside the usable display area.")
-            return PlacementResult(outcome: .constrained, message: message, actualFrame: actual)
+            let reason: PlacementResult.ConstraintReason
+            let message: String
+            if !contains(actual, in: visibleFrame) {
+                reason = .outsideVisibleArea
+                message = L10n.text("The window could not fit fully inside the usable display area.")
+            } else {
+                // Use final readback, not the requested size: an app can accept
+                // a larger height while still aligning correctly at either edge.
+                let acceptedOrigin = PlacementGeometry.clampedOrigin(
+                    for: actual.size, desiredOrigin: frame.origin, in: visibleFrame
+                )
+                let aligned = CGRect(origin: acceptedOrigin, size: actual.size)
+                if PlacementResult.matchesRequestedFrame(actual, aligned) {
+                    reason = .sizeAdjusted
+                    message = L10n.text("Arranged · Adjusted to app size")
+                } else {
+                    reason = .positionMismatch
+                    message = L10n.text("The window could not be aligned to the requested position.")
+                }
+            }
+            return PlacementResult(outcome: .constrained, message: message, actualFrame: actual,
+                constraintReason: reason)
         } catch {
             // A setter error may be ambiguous. A single diagnostic read can
             // reveal its result, but an already failed read is never retried.

@@ -230,8 +230,10 @@ struct SettingsView: View {
                         shortcutRow(.up, title: "Move up", symbol: "arrow.up")
                         Divider()
                         shortcutRow(.down, title: "Move down", symbol: "arrow.down")
+                        Divider()
+                        maximizeShortcutRow
                     }
-                    Text(t("Choose a different key for each direction. Include ⌘, ⌃, or ⌥."))
+                    Text(t("Choose a different key for each action. Include ⌘, ⌃, or ⌥."))
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     if let validation = draftShortcuts.validationMessage {
@@ -252,7 +254,7 @@ struct SettingsView: View {
                 .padding(.top, 14)
             } label: {
                 HStack(spacing: 12) {
-                    Text(t("Direction shortcuts"))
+                    Text(t("Window shortcuts"))
                         .font(.system(size: 15, weight: .semibold))
                         .accessibilityAddTraits(.isHeader)
                     Spacer(minLength: 4)
@@ -290,6 +292,30 @@ struct SettingsView: View {
         .padding(.vertical, 9)
     }
 
+    private var maximizeShortcutRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
+                .frame(width: 24).accessibilityHidden(true)
+            Text(t("Maximize")).font(.callout)
+            Spacer()
+            ShortcutRecorder(current: draftShortcuts.maximize,
+                label: L10n.format("Record %@ shortcut", t("Maximize"), language: preferences.language),
+                bridge: coordinator.shortcutRecorder,
+                onRecord: { draftShortcuts.maximize = $0 })
+                .frame(width: 174, height: 30)
+            Button {
+                coordinator.shortcutRecorder.cancelRecording()
+                draftShortcuts.maximize = nil
+            } label: { Image(systemName: "xmark.circle") }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t("Clear maximize shortcut"))
+                .help(t("Clear maximize shortcut"))
+                .disabled(draftShortcuts.maximize == nil)
+        }
+        .padding(.vertical, 9)
+    }
+
     private var guidance: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(t("How it works")).font(.callout.weight(.semibold))
@@ -297,6 +323,8 @@ struct SettingsView: View {
                 detail: "Follow the screen order of enabled columns. Hold to repeat.")
             guidanceRow(keys: "↑ ↓", title: "Up and down",
                 detail: "Move between top, full height, and bottom, one press at a time.")
+            guidanceRow(keys: preferences.directionalShortcuts.maximize?.displayString ?? "—", title: "Maximize",
+                detail: "Fill the usable display without gaps. Use arrows to return to the grid.")
             Text(t("Choose Arrange Window… in the menu bar to select a zone by number or click."))
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -306,7 +334,7 @@ struct SettingsView: View {
 
     private func guidanceRow(keys: String, title: String, detail: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            TesseraKeycap(keys).frame(width: 48, alignment: .leading).accessibilityHidden(true)
+            TesseraKeycap(keys).frame(minWidth: 48, alignment: .leading).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(t(title)).font(.caption.weight(.medium))
                 Text(t(detail)).font(.caption).foregroundStyle(.secondary)

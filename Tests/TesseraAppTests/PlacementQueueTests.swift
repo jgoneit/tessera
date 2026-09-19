@@ -65,6 +65,52 @@ struct PlacementQueueTests {
         #expect(observer.finishCount == 1)
     }
 
+    @Test("Screen and grid requests retain their own geometry through the latest-only queue")
+    func screenAndGridRequestsRemainIndependent() async throws {
+        let executor = DelayedPlacementExecutor()
+        let observer = QueueObserver()
+        let queue = makeQueue(executor: executor, observer: observer)
+        let maximum = placement(.maximized, layout: .threeByTwo)
+        let finalGrid = placement(.zone(1), layout: .twoByTwo)
+        queue.submit(maximum)
+        await executor.waitForStarts(1)
+        queue.submit(placement(.screenTop, layout: .threeByTwo))
+        queue.submit(finalGrid)
+        queue.finish()
+        executor.completeNext(.constrained)
+        await executor.waitForStarts(2)
+        #expect(executor.started == [maximum, finalGrid])
+        let display = CGRect(x: -1200, y: 25, width: 1200, height: 800)
+        let frames = try executor.started.map {
+            try GridGeometry.frame(in: display, layout: $0.layout, target: $0.target, gap: 8, scale: 2)
+        }
+        #expect(frames[0] == display)
+        #expect(frames[1].width == 588)
+        #expect(frames[1].height == 388)
+        executor.completeNext(.applied)
+        await observer.waitForFinish()
+        #expect(executor.writes == [maximum, finalGrid])
+        #expect(executor.maximumConcurrent == 1)
+    }
+
+    @Test("Cancellation or failure cannot apply a pending screen-wide request", arguments: [false, true])
+    func screenRequestDroppedAfterStop(cancel: Bool) async {
+        let executor = DelayedPlacementExecutor()
+        let observer = QueueObserver()
+        let queue = makeQueue(executor: executor, observer: observer)
+        let first = placement(.screenBottom, layout: .fourByTwo)
+        queue.submit(first)
+        await executor.waitForStarts(1)
+        queue.submit(placement(.maximized))
+        if cancel { queue.cancel() }
+        executor.completeNext(cancel ? .applied : .failed)
+        await observer.waitForFinish()
+        queue.submit(placement(.screenTop))
+        #expect(executor.started == [first])
+        #expect(executor.writes == (cancel ? [] : [first]))
+        #expect(observer.finishCount == 1)
+    }
+
     @Test("A held vertical key keeps full height pending while another placement is suspended",
           arguments: [GridDirection.up, .down])
     func heldVerticalKeyDoesNotCoalesceAwayFullHeight(direction: GridDirection) async {

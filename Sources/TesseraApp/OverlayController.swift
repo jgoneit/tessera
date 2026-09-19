@@ -31,13 +31,26 @@ final class ZoneSelectionModel: ObservableObject {
         status = L10n.format("Arranging %@…", target.label)
         return target
     }
+
+    func maximize() -> GridPlacement {
+        var next = state
+        let target = next.maximize()
+        state = next
+        status = L10n.format("Arranging %@…", target.label)
+        return target
+    }
 }
 
 extension GridPlacement {
     var label: String { localizedLabel() }
 
     func localizedLabel(language: AppLanguage? = nil) -> String {
-        L10n.format("%@ · %@", layout.title, target.localizedLabel(language: language), language: language)
+        switch target {
+        case .maximized, .screenTop, .screenBottom:
+            target.localizedLabel(language: language)
+        case .zone, .column:
+            L10n.format("%@ · %@", layout.title, target.localizedLabel(language: language), language: language)
+        }
     }
 }
 
@@ -48,18 +61,37 @@ extension PlacementTarget {
         switch self {
         case .zone(let id): L10n.format("Zone %d", id, language: language)
         case .column(let index): L10n.format("Column %d · full height", index, language: language)
+        case .maximized: L10n.text("Maximize", language: language)
+        case .screenTop: L10n.text("Top half of screen", language: language)
+        case .screenBottom: L10n.text("Bottom half of screen", language: language)
         }
     }
 }
 
+/// A one-shot action stops a held plain horizontal key without blocking the
+/// next fresh press. Registered combinations take their own Carbon route.
+struct SelectorHorizontalRepeat {
+    private var suppressed: Set<UInt16> = []
+
+    mutating func stop() { suppressed = [123, 124] }
+
+    mutating func permitsKeyDown(_ keyCode: UInt16, isRepeat: Bool) -> Bool {
+        if !isRepeat { suppressed.remove(keyCode) }
+        return !suppressed.contains(keyCode)
+    }
+
+    mutating func keyUp(_ keyCode: UInt16) { suppressed.remove(keyCode) }
+}
+
 @MainActor
-private final class ZonePanel: NSPanel {
+final class ZonePanel: NSPanel {
     private let log = Logger(subsystem: "io.github.jgoneit.tessera", category: "selector")
     var onSelect: ((Int) -> Void)?
     var onMove: ((GridDirection, Bool) -> Void)?
     var onFinish: (() -> Void)?
     var onCancel: (() -> Void)?
     var isRegisteredShortcut: ((Shortcut) -> Bool)?
+    private var horizontalRepeat = SelectorHorizontalRepeat()
     var zoneCount: () -> Int = { 0 }
     static func isSelectionKey(_ keyCode: UInt16) -> Bool {
         [53, 36, 76, 123, 124, 125, 126, 18, 19, 20, 21, 23, 22, 26, 28,
@@ -68,11 +100,15 @@ private final class ZonePanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
+    func cancelDirectionalRepeat() { horizontalRepeat.stop() }
+
     override func sendEvent(_ event: NSEvent) {
+        if event.type == .keyUp { horizontalRepeat.keyUp(event.keyCode) }
         if event.type == .keyDown {
             // Registered combinations are delivered by Carbon, including when
             // the nonactivating panel is key. Consume any duplicate local route.
             if isRegisteredShortcut?(Shortcut(event: event)) == true { return }
+            if !horizontalRepeat.permitsKeyDown(event.keyCode, isRepeat: event.isARepeat) { return }
             if Self.isSelectionKey(event.keyCode) {
                 log.notice("Panel selection key: code=\(event.keyCode) repeat=\(event.isARepeat)")
             }
@@ -119,6 +155,8 @@ final class OverlayController {
 
     func show(model: ZoneSelectionModel, screen: NSScreen, appName: String,
               isRegisteredShortcut: @escaping (Shortcut) -> Bool,
+              maximizeShortcut: String? = nil,
+              onMaximize: @escaping () -> Void,
               onSelect: @escaping (GridPlacement, Bool) -> Void,
               onFinish: @escaping () -> Void, onCancel: @escaping () -> Void) {
         dismiss()
@@ -158,6 +196,8 @@ final class OverlayController {
         let hosting = NSHostingView(rootView: ZoneSelectorView(model: model,
             appName: appName, displayName: screen.localizedName,
             gridSize: CGSize(width: gridWidth, height: gridHeight),
+            maximizeShortcut: maximizeShortcut,
+            onMaximize: onMaximize,
             onSelect: { onSelect($0, true) }))
         window.contentView = hosting
         let measuredHeight = ceil(hosting.fittingSize.height)
@@ -192,6 +232,8 @@ final class OverlayController {
     }
 
     func updateStatus(_ message: String) { model?.status = message }
+
+    func cancelDirectionalRepeat() { panel?.cancelDirectionalRepeat() }
 
     /// Hides keyboard UI while keeping outside-click cancellation active during drain.
     func hideForFinish() {
@@ -259,15 +301,20 @@ struct ZoneSelectorView: View {
     let displayName: String
     let gridSize: CGSize
     let language: AppLanguage?
+    let maximizeShortcut: String?
+    let onMaximize: () -> Void
     let onSelect: (GridPlacement) -> Void
 
     init(model: ZoneSelectionModel, appName: String, displayName: String,
-         gridSize: CGSize, language: AppLanguage? = nil, onSelect: @escaping (GridPlacement) -> Void) {
+         gridSize: CGSize, language: AppLanguage? = nil, maximizeShortcut: String? = nil,
+         onMaximize: @escaping () -> Void = {}, onSelect: @escaping (GridPlacement) -> Void) {
         self.model = model
         self.appName = appName
         self.displayName = displayName
         self.gridSize = gridSize
         self.language = language
+        self.maximizeShortcut = maximizeShortcut
+        self.onMaximize = onMaximize
         self.onSelect = onSelect
     }
 
@@ -277,7 +324,7 @@ struct ZoneSelectorView: View {
         let displayedLayout = layout
         let selectedTarget = model.navigation.selectedTarget
         let highlightedZones = model.navigation.highlightedZoneIDs
-        let isFullHeight: Bool = if case .column = selectedTarget { true } else { false }
+        let isGrouped: Bool = if case .zone = selectedTarget { false } else { true }
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: "square.grid.2x2")
@@ -307,7 +354,7 @@ struct ZoneSelectorView: View {
                             let number = row * displayedLayout.columns + column + 1
                             ZoneButton(number: number,
                                 selected: highlightedZones.contains(number),
-                                partOfFullColumn: isFullHeight,
+                                partOfGroup: isGrouped,
                                 language: language,
                                 onSelect: { onSelect(GridPlacement(layout: displayedLayout, target: .zone($0))) })
                         }
@@ -316,21 +363,29 @@ struct ZoneSelectorView: View {
             }
             .frame(width: gridSize.width, height: gridSize.height)
             .overlay {
-                if case .column(let index) = selectedTarget {
-                    let width = (gridSize.width - CGFloat(displayedLayout.columns - 1) * 6) / CGFloat(displayedLayout.columns)
+                if let outline = selectionOutline(for: selectedTarget, layout: displayedLayout) {
                     RoundedRectangle(cornerRadius: 11)
                         .strokeBorder(contrast == .increased ? Color.primary : Color.accentColor,
                             lineWidth: contrast == .increased ? 3 : 2)
-                        .frame(width: width, height: gridSize.height)
-                        .frame(width: gridSize.width, alignment: .leading)
-                        .offset(x: CGFloat(index - 1) * (width + 6))
+                        .frame(width: outline.width, height: outline.height)
+                        .frame(width: gridSize.width, height: gridSize.height, alignment: .topLeading)
+                        .offset(x: outline.minX, y: outline.minY)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(model.navigation.selectedPlacement.localizedLabel(language: language))
-                    .font(.callout.weight(.semibold)).lineLimit(1)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) {
+                        selectionLabel
+                        Spacer(minLength: 8)
+                        maximizeButton
+                    }
+                    VStack(alignment: .leading, spacing: 6) {
+                        selectionLabel
+                        maximizeButton
+                    }
+                }
                 Text(model.status).font(.caption).foregroundStyle(.secondary)
                     .lineLimit(2).frame(height: 28, alignment: .topLeading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -340,6 +395,43 @@ struct ZoneSelectorView: View {
         }
         .padding(.horizontal, 20).padding(.vertical, 16)
         .modifier(OverlaySurface())
+    }
+
+    private var selectionLabel: some View {
+        Text(model.navigation.selectedPlacement.localizedLabel(language: language))
+            .font(.callout.weight(.semibold)).lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private var maximizeButton: some View {
+        Button(action: onMaximize) {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .accessibilityHidden(true)
+                Text(L10n.text("Maximize", language: language))
+                if let maximizeShortcut { TesseraKeycap(maximizeShortcut) }
+            }
+            .font(.caption.weight(.medium))
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityLabel(L10n.text("Maximize", language: language))
+        .accessibilityHint(L10n.text("Fill the usable display without gaps. Use arrows to return to the grid.", language: language))
+    }
+
+    private func selectionOutline(for target: PlacementTarget, layout: LayoutPreset) -> CGRect? {
+        switch target {
+        case .zone: return nil
+        case .column(let index):
+            let width = (gridSize.width - CGFloat(layout.columns - 1) * 6) / CGFloat(layout.columns)
+            return CGRect(x: CGFloat(index - 1) * (width + 6), y: 0, width: width, height: gridSize.height)
+        case .maximized: return CGRect(origin: .zero, size: gridSize)
+        case .screenTop:
+            return CGRect(x: 0, y: 0, width: gridSize.width, height: (gridSize.height - 6) / 2)
+        case .screenBottom:
+            let height = (gridSize.height - 6) / 2
+            return CGRect(x: 0, y: height + 6, width: gridSize.width, height: height)
+        }
     }
 
     private func keyboardHints(zoneCount: Int) -> some View {
@@ -440,7 +532,7 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
 private struct ZoneButton: View {
     let number: Int
     let selected: Bool
-    let partOfFullColumn: Bool
+    let partOfGroup: Bool
     let language: AppLanguage?
     let onSelect: (Int) -> Void
     @ViewState private var hovered = false
@@ -482,12 +574,12 @@ private struct ZoneButton: View {
     }
 
     private var borderColor: Color {
-        if selected && !partOfFullColumn { return contrast == .increased ? Color.primary : Color.accentColor }
+        if selected && !partOfGroup { return contrast == .increased ? Color.primary : Color.accentColor }
         return contrast == .increased ? Color.primary.opacity(0.55) : TesseraDesign.border
     }
 
     private var borderWidth: CGFloat {
-        if selected { return partOfFullColumn ? 1 : (contrast == .increased ? 3 : 2) }
+        if selected { return partOfGroup ? 1 : (contrast == .increased ? 3 : 2) }
         return contrast == .increased ? 1.5 : 1
     }
 }

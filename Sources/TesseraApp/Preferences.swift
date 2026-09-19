@@ -17,6 +17,8 @@ final class Preferences: ObservableObject {
     }
 
     @Published private(set) var directionalShortcuts: DirectionalShortcuts
+    private(set) var maximizeMigrationPending = false
+    private(set) var shortcutMigrationNotice: String?
 
     @Published var language: AppLanguage {
         didSet { defaults.set(language.rawValue, forKey: Keys.language) }
@@ -32,6 +34,8 @@ final class Preferences: ObservableObject {
         static let enabledLayouts = "tessera.enabledLayouts.v1"
         static let legacyLayout = "tessera.defaultLayout"
         static let gap = "tessera.gap"
+        static let placementShortcuts = "tessera.placementShortcuts.v3"
+        static let shortcutMigrationPending = "tessera.placementShortcutsMigrationPending.v3"
         static let directionalShortcuts = "tessera.directionalShortcuts.v2"
         static let legacyShortcut = "tessera.globalShortcut"
         static let language = "tessera.language.v1"
@@ -64,18 +68,38 @@ final class Preferences: ObservableObject {
         } else {
             gap = 8
         }
-        if let data = defaults.data(forKey: Keys.directionalShortcuts),
-           let stored = try? JSONDecoder().decode(DirectionalShortcuts.self, from: data),
-           stored.validationMessage == nil {
-            directionalShortcuts = stored
+        if defaults.object(forKey: Keys.placementShortcuts) != nil {
+            maximizeMigrationPending = defaults.bool(forKey: Keys.shortcutMigrationPending)
+            if let data = defaults.data(forKey: Keys.placementShortcuts),
+               let stored = try? JSONDecoder().decode(DirectionalShortcuts.self, from: data),
+               stored.validationMessage == nil {
+                directionalShortcuts = stored
+            } else {
+                directionalShortcuts = .default
+            }
         } else {
-            directionalShortcuts = .default
+            maximizeMigrationPending = true
+            if let data = defaults.data(forKey: Keys.directionalShortcuts),
+               let legacy = try? JSONDecoder().decode(LegacyDirectionalShortcuts.self, from: data),
+               legacy.bindings.validationMessage == nil {
+                directionalShortcuts = legacy.bindings
+                if GridDirection.allCases.contains(where: { legacy.bindings[$0] == .defaultMaximize }) {
+                    shortcutMigrationNotice = L10n.text("Maximize shortcut was not assigned because a direction already uses it. Your direction shortcuts are unchanged.")
+                } else {
+                    directionalShortcuts.maximize = .defaultMaximize
+                }
+            } else {
+                // The old single shortcut cannot express direction actions.
+                directionalShortcuts = .default
+            }
         }
-        // The old single key cannot express four directions. Migrate to the
-        // new defaults while preserving layout/gap, and normalize corrupt v2 data.
+        // Keep the first-migration fallback eligible across a failed startup or
+        // interrupted launch. Successful registration/application clears it.
+        defaults.set(maximizeMigrationPending, forKey: Keys.shortcutMigrationPending)
         if let data = try? JSONEncoder().encode(directionalShortcuts) {
-            defaults.set(data, forKey: Keys.directionalShortcuts)
+            defaults.set(data, forKey: Keys.placementShortcuts)
         }
+        defaults.removeObject(forKey: Keys.directionalShortcuts)
         defaults.removeObject(forKey: Keys.legacyShortcut)
         defaults.set(language.rawValue, forKey: Keys.language)
         defaults.set(theme.rawValue, forKey: Keys.theme)
@@ -105,6 +129,20 @@ final class Preferences: ObservableObject {
         guard bindings.validationMessage == nil,
               let data = try? JSONEncoder().encode(bindings) else { return }
         directionalShortcuts = bindings
-        defaults.set(data, forKey: Keys.directionalShortcuts)
+        defaults.set(data, forKey: Keys.placementShortcuts)
+        maximizeMigrationPending = false
+        defaults.removeObject(forKey: Keys.shortcutMigrationPending)
+        shortcutMigrationNotice = nil
+    }
+
+    private struct LegacyDirectionalShortcuts: Decodable {
+        let left: Shortcut
+        let right: Shortcut
+        let up: Shortcut
+        let down: Shortcut
+
+        var bindings: DirectionalShortcuts {
+            DirectionalShortcuts(left: left, right: right, up: up, down: down, maximize: nil)
+        }
     }
 }

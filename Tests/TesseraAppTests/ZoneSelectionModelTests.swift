@@ -1,4 +1,5 @@
 import CoreGraphics
+import AppKit
 import Testing
 import TesseraCore
 @testable import TesseraApp
@@ -137,6 +138,104 @@ struct ZoneSelectionModelTests {
         #expect(model.move(.down) == GridPlacement(layout: .twoByTwo, target: .column(2)))
         #expect(model.move(.down, isRepeat: true) == nil)
         #expect(model.move(.down) == GridPlacement(layout: .twoByTwo, target: .zone(4)))
+    }
+
+    @Test("Maximize keeps the selector active and arrows traverse screen height before returning to the grid")
+    func maximizeThenNavigate() {
+        let model = ZoneSelectionModel(navigation: GridNavigation(
+            layouts: [.twoByTwo, .threeByTwo],
+            windowFrame: CGRect(x: 510, y: 100, width: 180, height: 300),
+            visibleFrame: CGRect(x: 0, y: 0, width: 1200, height: 800)))
+        let displayedLayout = model.layout
+        let first = model.maximize()
+        #expect(first.target == .maximized)
+        #expect(model.navigation.selectedTarget == .maximized)
+        #expect(model.navigation.highlightedZoneIDs == Array(1...displayedLayout.zones.count))
+        #expect(model.state.lastConfirmedFrame == nil)
+        #expect(model.maximize() == first) // The request remains available for another one-shot press.
+        #expect(model.move(.up)?.target == .screenTop)
+        #expect(model.navigation.highlightedZoneIDs == Array(1...displayedLayout.columns))
+        #expect(model.move(.down, isRepeat: true) == nil)
+        #expect(model.navigation.selectedTarget == .screenTop)
+        #expect(model.move(.down)?.target == .maximized)
+        #expect(model.move(.down)?.target == .screenBottom)
+        #expect(model.navigation.highlightedZoneIDs == Array((displayedLayout.columns + 1)...displayedLayout.zones.count))
+        #expect(model.move(.down) == nil)
+        #expect(model.move(.left) == GridPlacement(layout: .twoByTwo, target: .zone(3)))
+        #expect(model.layout == .twoByTwo)
+        #expect(model.zoneCount == 4)
+    }
+
+    @Test("Screen-wide states leave numbers and clicks bound to the displayed layout", arguments: LayoutPreset.allCases)
+    func screenWideSelectionRetainsZoneTargets(layout: LayoutPreset) {
+        let model = makeModel(layout: layout)
+        _ = model.maximize()
+        for direction: GridDirection? in [nil, .up, .down, .down] {
+            if let direction { _ = model.move(direction) }
+            #expect(model.zoneCount == layout.zones.count)
+            #expect(model.placement(forZone: layout.zones.count)
+                == GridPlacement(layout: layout, target: .zone(layout.zones.count)))
+            #expect(model.placement(forZone: layout.zones.count + 1) == nil)
+        }
+    }
+
+    @Test("Maximize suppresses held plain horizontal repeats until release or a fresh press")
+    func maximizeStopsPlainHorizontalRepeat() {
+        var input = SelectorHorizontalRepeat()
+        func check(_ key: UInt16, repeat isRepeat: Bool, allowed: Bool) {
+            let actual = input.permitsKeyDown(key, isRepeat: isRepeat)
+            #expect(actual == allowed)
+        }
+        check(123, repeat: false, allowed: true)
+        check(123, repeat: true, allowed: true)
+        input.stop()
+        check(123, repeat: true, allowed: false)
+        check(124, repeat: true, allowed: false)
+        check(125, repeat: true, allowed: true)
+        check(36, repeat: false, allowed: true)
+        check(123, repeat: true, allowed: false)
+        input.keyUp(123)
+        check(123, repeat: true, allowed: true)
+        check(124, repeat: true, allowed: false)
+        check(124, repeat: false, allowed: true)
+        check(124, repeat: true, allowed: true)
+    }
+
+    @Test("The panel consumes registered maximize without closing and still closes for ordinary Enter or Esc")
+    func registeredMaximizeDoesNotCloseSelector() throws {
+        _ = NSApplication.shared
+        let panel = ZonePanel(contentRect: CGRect(x: 0, y: 0, width: 100, height: 100),
+            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.isReleasedWhenClosed = false
+        defer { panel.close() }
+        var finishes = 0
+        var moves: [GridDirection] = []
+        panel.onFinish = { finishes += 1 }
+        panel.onMove = { direction, _ in moves.append(direction) }
+        panel.isRegisteredShortcut = { $0 == .defaultMaximize }
+        func press(_ key: UInt16, modifiers: NSEvent.ModifierFlags = [], repeating: Bool = false) throws {
+            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero,
+                modifierFlags: modifiers, timestamp: 0, windowNumber: panel.windowNumber,
+                context: nil, characters: "", charactersIgnoringModifiers: "", isARepeat: repeating, keyCode: key))
+            panel.sendEvent(event)
+        }
+        try press(36, modifiers: [.control, .option])
+        #expect(finishes == 0)
+        #expect(moves.isEmpty)
+        try press(36)
+        #expect(finishes == 1)
+        try press(36, repeating: true)
+        #expect(finishes == 1)
+        try press(76)
+        try press(53)
+        #expect(finishes == 3)
+
+        try press(123)
+        panel.cancelDirectionalRepeat()
+        try press(123, repeating: true)
+        #expect(moves == [.left])
+        try press(123)
+        #expect(moves == [.left, .left])
     }
 
     private func makeModel(layout: LayoutPreset) -> ZoneSelectionModel {

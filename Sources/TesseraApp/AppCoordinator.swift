@@ -6,7 +6,7 @@ import SwiftUI
 import TesseraCore
 
 @MainActor
-final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
+final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindowDelegate {
     let preferences: Preferences
     let shortcutRecorder = ShortcutRecordingBridge()
     @Published private(set) var permissionGranted = false
@@ -29,15 +29,16 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
     private var requestID = UUID()
     private var capturingPID: pid_t?
     private var selectorCapture: Task<Void, Never>?
-    private var deferredDirections: [GridDirection] = []
+    private var deferredActions: [PlacementAction] = []
     private var recordingShortcut = false
     private var session: SelectionSession?
     private var placementQueue: PlacementQueue?
     private var selectorIsOpen = false
     private var menuCapture: MenuCapture?
+    private var directMenuCapture: MenuCapture?
     private var stopping = false
-    private lazy var directionInput = BufferedDirectionInput(
-        prepare: { [weak self] in await self?.prepareDirectionBatch() },
+    private lazy var placementInput = BufferedPlacementInput(
+        prepare: { [weak self] in await self?.preparePlacementBatch() },
         onIdle: { [weak self] in self?.updateBusyState() })
 
     init(preferences: Preferences = Preferences()) {
@@ -119,7 +120,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
             // turn so AppKit and SwiftUI resolve the same saved language.
             Task { @MainActor [weak self] in self?.refreshLocalizedPresentation() }
         }.store(in: &preferenceObservers)
-        shortcuts.onTrigger = { [weak self] in self?.handleDirection($0) }
+        shortcuts.onTrigger = { [weak self] in self?.handleAction($0) }
         shortcuts.onRecord = { [weak self] in self?.shortcutRecorder.receiveRegistered($0) }
         shortcuts.onError = { [weak self] message in
             self?.shortcutError = message
@@ -161,7 +162,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
                 Task { @MainActor in self?.cancelSelection(reason: "session inactive") }
             })
         }
-        if !permissionGranted || !shortcutsActive { showSettings() }
+        if !permissionGranted || !shortcutsActive || shortcutError != nil { showSettings() }
     }
 
     func stop() {
@@ -176,7 +177,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
     }
 
     func menuWillOpen(_ menu: NSMenu) {
-        if session?.mode == .direct || directionInput.isPreparing { cancelSelection(reason: "menu opened") }
+        if session?.mode == .direct || placementInput.isPreparing { cancelSelection(reason: "menu opened") }
         refreshPermission()
         rebuildMenu(menu)
         discardMenuCapture()
@@ -218,6 +219,13 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
         arrange.target = self
         arrange.isEnabled = !isWorking
         menu.addItem(arrange)
+        let maximizeTitle = preferences.directionalShortcuts.maximize.map {
+            L10n.format("%@: %@", L10n.text("Maximize"), $0.displayString)
+        } ?? L10n.text("Maximize")
+        let maximize = NSMenuItem(title: maximizeTitle, action: #selector(maximizeFromMenu), keyEquivalent: "")
+        maximize.target = self
+        maximize.isEnabled = !isWorking
+        menu.addItem(maximize)
         for (name, direction) in [("Left", GridDirection.left), ("Right", .right), ("Up", .up), ("Down", .down)] {
             let item = NSMenuItem(title: L10n.format("%@: %@", L10n.text(name), preferences.directionalShortcuts[direction].displayString), action: nil, keyEquivalent: "")
             item.isEnabled = false
@@ -252,28 +260,37 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
         } else { showFeedback(L10n.text("Select another app's window first.")) }
     }
 
+    @objc private func maximizeFromMenu() {
+        let capture = menuCapture
+        menuCapture = nil
+        cancelSelection(reason: "maximize from menu")
+        directMenuCapture = capture
+        handleAction(.maximize)
+    }
+
     private func externalFrontmostApplication() -> NSRunningApplication? {
         guard let app = NSWorkspace.shared.frontmostApplication,
               app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return nil }
         return app
     }
 
-    private func handleDirection(_ direction: GridDirection) {
+    private func handleAction(_ action: PlacementAction) {
         guard !recordingShortcut, !stopping else { return }
+        if action == .maximize { overlay.cancelDirectionalRepeat() }
         refreshPermission()
         guard permissionGranted else { cancelSelection(reason: "permission required"); showSettings(); return }
         if let selection = session, selection.mode == .selector {
-            if selectorIsOpen { move(direction, in: selection) }
-            else { deferredDirections.append(direction) }
+            if selectorIsOpen { apply(action, in: selection) }
+            else { deferredActions.append(action) }
             return
         }
-        if selectorCapture != nil { deferredDirections.append(direction); return }
+        if selectorCapture != nil { deferredActions.append(action); return }
         isWorking = true
         watchDirectClicks()
-        directionInput.submit(direction)
+        placementInput.submit(action)
     }
 
-    private func prepareDirectionBatch() async -> BufferedDirectionInput.Apply? {
+    private func preparePlacementBatch() async -> BufferedPlacementInput.Apply? {
         let generation = requestID
         guard let app = externalFrontmostApplication() else {
             cancelSelection(reason: "no active window")
@@ -287,10 +304,15 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
         let wasBusy = placementQueue?.isBusy == true
         var resolved: WindowTarget?
         do {
-            let target = try await windows.resolveFocusedTarget(pid: pid, reusing: previous?.target)
+            let captured = directMenuCapture
+            directMenuCapture = nil
+            let target: WindowTarget
+            if let captured { target = try await captured.task.value }
+            else { target = try await windows.resolveFocusedTarget(pid: pid, reusing: previous?.target) }
             resolved = target
             try Task.checkCancellation()
-            guard requestID == generation, externalFrontmostApplication()?.processIdentifier == pid else {
+            guard requestID == generation, target.pid == pid,
+                  externalFrontmostApplication()?.processIdentifier == pid else {
                 throw WindowSystemError.targetChanged
             }
             let screens = ScreenCatalog.snapshot()
@@ -311,9 +333,9 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
                     layouts: preferences.enabledLayouts, gap: preferences.gap, appName: app.localizedName ?? L10n.text("Window"), mode: .direct)
                 install(selection)
             }
-            return { [weak self, weak selection] direction in
+            return { [weak self, weak selection] action in
                 guard let self, let selection, self.session === selection else { return }
-                self.move(direction, in: selection)
+                self.apply(action, in: selection)
             }
         } catch {
             if let resolved, resolved.token != session?.target.token { await windows.discard(target: resolved) }
@@ -360,21 +382,28 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
                 capturingPID = nil
                 overlay.show(model: selection.model, screen: screen, appName: appName,
                     isRegisteredShortcut: { [weak self] in self?.shortcuts.contains($0) == true },
+                    maximizeShortcut: preferences.directionalShortcuts.maximize?.displayString,
+                    onMaximize: { [weak self] in
+                        guard let self, self.session === selection else { return }
+                        self.shortcuts.cancelInput()
+                        self.overlay.cancelDirectionalRepeat()
+                        self.apply(.maximize, in: selection)
+                    },
                     onSelect: { [weak self] target, closes in self?.select(target, close: closes, selection: selection) },
                     onFinish: { [weak self] in self?.finishSelection(selection) },
                     onCancel: { [weak self] in
                         guard let self, self.session === selection else { return }
                         self.cancelSelection(reason: "selector dismissed")
                     })
-                let buffered = deferredDirections
-                deferredDirections.removeAll()
-                buffered.forEach { move($0, in: selection) }
+                let buffered = deferredActions
+                deferredActions.removeAll()
+                buffered.forEach { apply($0, in: selection) }
             } catch {
                 if let resolved { await windows.discard(target: resolved) }
                 guard requestID == generation else { return }
                 selectorCapture = nil
                 capturingPID = nil
-                deferredDirections.removeAll()
+                deferredActions.removeAll()
                 isWorking = false
                 shortcuts.cancelInput()
                 if !(error is CancellationError) { showFeedback(UserFacingError.message(error)) }
@@ -402,9 +431,14 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
         previousQueue?.cancel()
     }
 
-    private func move(_ direction: GridDirection, in selection: SelectionSession) {
+    private func apply(_ action: PlacementAction, in selection: SelectionSession) {
         guard session === selection else { return }
-        if let target = selection.model.move(direction) { select(target, close: false, selection: selection) }
+        let target: GridPlacement?
+        switch action {
+        case .direction(let direction): target = selection.model.move(direction)
+        case .maximize: target = selection.model.maximize()
+        }
+        if let target { select(target, close: false, selection: selection) }
     }
 
     private func select(_ destination: GridPlacement, close: Bool, selection: SelectionSession) {
@@ -482,7 +516,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
             selection.model.status = message
             if !selectorIsOpen {
                 showFeedback(message, screenID: selection.display.id,
-                    duration: result.outcome == .applied ? .seconds(1) : .seconds(4))
+                    duration: result.feedbackDuration)
             }
         }
     }
@@ -498,24 +532,28 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
         selectorIsOpen = false
         overlay.dismiss()
         stopWatchingDirectClicks()
-        let buffered = deferredDirections
-        deferredDirections.removeAll()
+        let buffered = deferredActions
+        deferredActions.removeAll()
         updateBusyState()
-        buffered.forEach(handleDirection)
+        buffered.forEach(handleAction)
     }
 
     private func updateBusyState() {
-        isWorking = selectorIsOpen || selectorCapture != nil || directionInput.isPreparing || placementQueue?.isBusy == true
+        isWorking = selectorIsOpen || selectorCapture != nil || placementInput.isPreparing || placementQueue?.isBusy == true
         if !isWorking, session == nil { stopWatchingDirectClicks() }
     }
 
     private func cancelSelection(reason: String = "new action") {
         requestID = UUID()
-        directionInput.cancel()
+        placementInput.cancel()
+        if let captured = directMenuCapture {
+            directMenuCapture = nil
+            Task { if let target = try? await captured.task.value { await windows.discard(target: target) } }
+        }
         selectorCapture?.cancel()
         selectorCapture = nil
         capturingPID = nil
-        deferredDirections.removeAll()
+        deferredActions.removeAll()
         shortcuts.cancelInput()
         selectorIsOpen = false
         overlay.dismiss()
@@ -585,12 +623,24 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
             window.toolbarStyle = .unified
             window.setFrameAutosaveName("TesseraSettings")
             window.isReleasedWhenClosed = false
+            window.delegate = self
+            window.collectionBehavior = [.managed, .fullScreenPrimary]
             window.contentView = NSHostingView(rootView: SettingsView(coordinator: self, preferences: preferences))
             window.center()
             settingsWindow = window
         }
+        // A real settings window participates in Mission Control and app switching.
+        // Pickers and feedback never promote the menu-bar app to regular mode.
+        NSApp.setActivationPolicy(.regular)
+        if settingsWindow?.isMiniaturized == true { settingsWindow?.deminiaturize(nil) }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === settingsWindow else { return }
+        shortcutRecorder.cancelRecording()
+        NSApp.setActivationPolicy(.accessory)
     }
 
     private func applyAppearance(_ theme: AppTheme) {
@@ -613,8 +663,14 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
 
     private func registerSavedShortcuts() {
         shortcutError = nil
-        do { try shortcuts.register(preferences.directionalShortcuts); shortcutsActive = true }
-        catch { shortcutError = UserFacingError.message(error); shortcutsActive = false }
+        let migrationNotice = preferences.shortcutMigrationNotice
+        do {
+            let registered = try shortcuts.registerAtStartup(preferences.directionalShortcuts,
+                allowMaximizeFallback: preferences.maximizeMigrationPending)
+            preferences.setDirectionalShortcuts(registered.bindings)
+            shortcutError = registered.warning ?? migrationNotice
+            shortcutsActive = true
+        } catch { shortcutError = UserFacingError.message(error); shortcutsActive = false }
     }
 
     func applyShortcuts(_ bindings: DirectionalShortcuts) {
@@ -624,7 +680,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate {
             try shortcuts.register(bindings)
             preferences.setDirectionalShortcuts(bindings)
             shortcutsActive = true
-            statusMessage = L10n.text("Directional shortcuts applied.")
+            statusMessage = L10n.text("Window shortcuts applied.")
         } catch { shortcutError = UserFacingError.message(error) }
     }
 }

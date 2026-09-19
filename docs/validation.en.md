@@ -347,3 +347,140 @@ Existing regression tests cover fractional coordinates, floating-point noise, su
   “잘된다” (“it works”) updated the record to confirm that earlier version's basic behavior. See above for the subsequent four-direction global-shortcut confirmation;
   detailed cancellation, multiple displays, and new multi-grid runtime checks remain separate.
 - The Task for that change is `TESSERA-V01-ICON-NAV-20260917`, preserved alongside previous Tasks and Runs.
+
+## Size-adjustment feedback for top/bottom placement — 2026-09-19
+
+AX logs from the running ChatGPT window showed a requested top/bottom cell height of `474.5pt`
+being adjusted to `600pt`. The top cell aligned at `y=33`, and the bottom cell at `y=382`, inside
+usable screen bounds with a bottom edge of `982pt`. The previous four-second notice combined
+this size adjustment with position problems, making correctly aligned placement sound like a failure.
+
+- Kept `.constrained` and added reasons for size adjustment, position mismatch, and overflow beyond
+  the usable display area. Contained final readback matching the clamped origin calculated from its
+  actual size is classified as size-adjusted. Overflow takes precedence; AX errors and partial-write handling remain unchanged.
+- Exact success and “Arranged · Adjusted to app size” appear for one second. Position mismatch,
+  overflow, errors, and unclassified constraints appear for four seconds. The picker and recent result use the same copy.
+- Strict four-edge `0.001pt` comparison, manual-movement detection, AX write order/count/timeout,
+  and logical navigation state are unchanged.
+- All 37 focused placement, result, and localization tests passed. Coverage includes the observed
+  2×2/3×2 top/bottom adjustment, a second size adjustment during the final move, ignored position
+  writes, overflow precedence, and the one-/four-second feedback policy.
+- One offscreen picker/feedback render test passed and produced 40 images. The Korean dark and
+  English light size-adjustment notices were visually checked for unclipped text and borders.
+  This is separate from installed-app validation.
+- This change does not replace the public DMG. Existing multi-display and mixed-scale native checks remain pending.
+
+Seal Task `tessera-placement-feedback-20260919`, Run `ea2121c555944073b14fefa08e1fbc65`,
+received accepted Basic Completion after the required `unit-tests` and `app-bundle` checks.
+The verified bundle was copied to `/Applications/Tessera.app` and its signature was checked.
+Both built and installed executables had SHA-256
+`e739a5914dc4d464304f2c174e3b474b6238eb879b772f700e9a39ab755f306a`.
+Saved grids, gap, four direction bindings, language, and theme matched before and after installation.
+The previous app is preserved at
+`~/Library/Application Support/Tessera/Backups/Tessera-before-placement-feedback-20260919.app`.
+After the user completed macOS authentication, `/Applications/Tessera.app` was registered again in
+Accessibility settings. The installed app reported ready after “Check Again.” Settings remained semantically
+identical after relaunch and permission refresh (ignoring object-key order in the shortcut JSON).
+
+Installed-app checks are complete for this fix. The user confirmed normal top/full/bottom movement
+and a brief notice in ChatGPT, and separately confirmed normal behavior in TextEdit.
+AX logs for the verified TextEdit process also showed an exact full-height placement at
+`(0, 33, 756, 949)` classified as success, and a top-cell height adjustment from `474.5` to `475pt`
+classified as “Arranged · Adjusted to app size.” Notice duration was validated through the user's
+visual confirmation and automated one-/four-second policy tests; the logs do not measure display duration.
+Existing multi-display and mixed-scale native checks remain separately incomplete.
+
+## Maximize, screen halves, and Settings window visibility — 2026-09-19
+
+This change extends the local work above, including the size-adjustment feedback fix, with maximization,
+screen halves, and regular-app visibility while Settings exists. It does not replace the public DMG or website.
+
+- Maximize fills the latest `visibleFrame` with no Gap and remains maximized when repeated. Its default shortcut is
+  `⌃⌥Return`; the menu and picker button use the same action. macOS's separate full-screen Space remains unsupported.
+- Up/down traverses the full-width `top half ↔ maximized ↔ bottom half` states and stops at either end.
+  Screen halves use the configured Gap and existing pixel alignment; only maximization omits Gap.
+- Left/right from a screen-wide state enters the nearest active grid column in that direction from the screen center,
+  preserving height. With 2×2+3×2, maximize→left enters the full left 2×2 column. With all three grids,
+  the closer 4×2 columns 2 and 3 are used. Maximization is not inserted into the grid's horizontal cycle.
+- Maximize and direction input received during initial capture is applied in order. Latest-pending coalescing, serial AX
+  execution, cancellation checks before subsequent writes, and the 0.5-second timeout remain. Maximize is one-shot and stops horizontal repeat.
+- The picker remains open after maximizing and outlines the whole preview or a top/bottom row as one connected shape.
+  Screen-wide labels omit the grid name. Number/click selection in the displayed grid and Enter/Esc closing remain available.
+- Existing four-direction custom bindings migrate to `tessera.placementShortcuts.v3`, adding an optional maximize binding.
+  A maximize conflict during initial migration leaves only maximize unassigned and preserves direction bindings.
+  Later apply failures retain the existing active set. Recording blocks placement while retaining registrations and active-draft delivery.
+- Before opening Settings, Tessera changes to regular-app mode. Dock/⌘Tab visibility stays while Settings is minimized
+  or behind another app; closing it restores menu-bar-only mode. The picker and feedback alone do not create a Dock icon.
+  Mission Control window/icon presentation requires separate native verification.
+
+The initial integrated run passed 66 Core and 146 App tests, including maximize/screen-half navigation and
+geometry. After adding interrupted-migration recovery, 59 focused settings and shortcut tests passed.
+The picker Maximize button now stops held global and plain horizontal repeat; regression tests also check
+the separate registered-Maximize and ordinary Return/Escape event paths.
+
+Two offscreen render tests passed for Korean/English and light/dark appearances. The narrow English top-half
+picker and Korean maximized picker were visually checked for outlines, controls, and guidance. A long shortcut
+keycap overlapping the settings guidance was corrected, settings rendering passed again, and the Korean dark
+render confirmed that the overlap was removed.
+
+Final Seal and installed-app results are recorded below. Existing multi-display and mixed-scale runtime checks
+remain separately incomplete.
+
+Seal Task `tessera-maximize-mission-control-20260919`, Run
+`133af0355dc347eabb3e6738ea31e985`, executed the required `unit-tests` and `app-bundle` checks.
+Basic Completion was accepted using that exact Run ID. Another 31 focused input, picker, and placement-queue
+tests passed. The offscreen render checks generated 84 images.
+
+The previous installation was preserved at
+`~/Library/Application Support/Tessera/Backups/Tessera-before-maximize-20260919.app` before installing
+the verified bundle at `/Applications/Tessera.app`. Its signature was verified, and the build and installed
+executables both have SHA-256
+`58baf90bfeb01550eb95de30d410efacf9ba40f8a7164374bbea25ca548a2eb1`.
+The enabled 2×2+3×2 grids, Gap 0, system language/theme, and all four direction bindings remained unchanged.
+Maximize registered as `⌃⌥Return`; the v2 key migrated to v3 and its pending-migration marker was cleared.
+After the user completed macOS authentication, the installed path was re-registered in Accessibility.
+Tessera's permission recheck then showed that it was ready to arrange windows.
+
+The running process reported regular activation policy while Settings was open. This metadata alone is not
+proof of the actual Mission Control window/icon presentation. The user confirmed normal physical-key behavior
+for maximize→left 2×2 column and top half→maximize→bottom half. They also confirmed the Mission Control
+window/icon and Dock/⌘Tab presentation, including Settings minimization, reopening, and closing.
+
+AX logs from the same installed build showed an exact maximized requested/final frame of
+`(0, 33, 1512, 949)`. The app adjusted requested top/bottom half heights from `474.5` to `475pt`,
+aligned them at `y=33` and `y=507`, and classified both as “Arranged · Adjusted to app size.”
+Logs also confirmed physical hotkeys and placements for maximize→right 2×2 column and
+bottom half→bottom-right 2×2 cell. A final read-only code review found no additional defects.
+Multi-display and mixed-scale native checks remain incomplete. Public DMG/website updates,
+commits, and pushes were not part of this task.
+
+## Maximize web demo and alpha.2 publication — 2026-09-19
+
+This release includes the native changes above and the matching web maximize demo in `v0.1.0-alpha.2`.
+Existing Tasks/Runs and alpha.1 are preserved. The app is version `0.1.0`, build `2`, ad hoc signed for
+Apple Silicon. The currently installed app is not replaced.
+
+- All 49 web tests and `node --check website/app.mjs` passed, covering seven grid combinations,
+  screen-wide placement/height/grid entry, Gap/pixel alignment, bilingual messages, and asset hashes.
+- Local browser checks confirmed maximize→left 2×2 column, top half→maximize→bottom half, and entry
+  into the right central 4×2 column when all grids are selected. Screen-wide placement survived grid,
+  language, and theme changes.
+- Maximize's Enter/Space activation, numeric/click selection, and non-interception of modifier combinations
+  were checked. Korean/English, light/dark, and 390px layouts were inspected; at 320px the controls wrapped
+  without horizontal overflow.
+- Browser inspection caught height-label updates overwriting the note preview. Scoping the selector to
+  the guidance fixed it; note preservation, maximization, and numeric selection were rechecked.
+- Physical Korean IME input and other browser engines were not separately tested in this web change.
+  Existing native multi-display/mixed-scale verification remains incomplete.
+
+Seal, DMG, and public-URL verification results are recorded below after completion.
+
+Seal Task `tessera-maximize-web-alpha2-20260919`, Run `4ba27a9478e54f3cb0bb97b7b4dc36ed`, passed
+required `unit-tests`, `app-bundle`, `website-tests`, and `website-syntax`; Basic Completion was accepted.
+The verified build 2 was packaged with `build-dmg.sh --skip-build`. Image checksum verification and
+read-only mounting passed. The contained app signature, build number 2, `/Applications` link, and
+bilingual installation instructions were checked. Built and mounted executable SHA-256 both equal
+`f7d9a89651e64e60766918eaadab7dd3520c4f23214ee33b3e4f468d7b2f5da1`.
+DMG SHA-256 is `038aedb6df19a8ab9fa2479bebf96fe7c69065a358382d8d4ee59bfd13d7b92f`.
+Build 2 contains the native logic manually verified above; this step did not reinstall the existing app
+or verify download/launch on another Mac.

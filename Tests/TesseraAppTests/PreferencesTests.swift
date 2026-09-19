@@ -8,9 +8,127 @@ import TesseraCore
 @Suite("Preferences and shortcut configuration")
 @MainActor
 struct PreferencesTests {
-    private let shortcutKey = "tessera.directionalShortcuts.v2"
+    private let shortcutKey = "tessera.placementShortcuts.v3"
+    private let legacyDirectionalKey = "tessera.directionalShortcuts.v2"
     private let layoutKey = "tessera.enabledLayouts.v1"
     private let legacyLayoutKey = "tessera.defaultLayout"
+
+    @Test("Valid v2 direction keys migrate unchanged with the new Maximize default")
+    func directionalMigrationPreservesCustomKeys() throws {
+        try withDefaults { defaults in
+            var legacy = DirectionalShortcuts.default
+            legacy.left = Shortcut(keyCode: UInt32(kVK_ANSI_G), modifiers: UInt32(cmdKey | shiftKey))
+            defaults.set(try legacyData(legacy), forKey: legacyDirectionalKey)
+            defaults.set(12, forKey: "tessera.gap")
+            defaults.set([LayoutPreset.twoByTwo.rawValue, LayoutPreset.threeByTwo.rawValue], forKey: layoutKey)
+            let preferences = Preferences(defaults: defaults)
+            #expect(preferences.directionalShortcuts == legacy)
+            #expect(preferences.directionalShortcuts.maximize == .defaultMaximize)
+            #expect(preferences.maximizeMigrationPending)
+            #expect(preferences.shortcutMigrationNotice == nil)
+            #expect(preferences.gap == 12)
+            #expect(preferences.enabledLayouts == [.twoByTwo, .threeByTwo])
+            #expect(defaults.object(forKey: legacyDirectionalKey) == nil)
+            preferences.setDirectionalShortcuts(preferences.directionalShortcuts)
+            #expect(!preferences.maximizeMigrationPending)
+            let restored = Preferences(defaults: defaults)
+            #expect(restored.directionalShortcuts == legacy)
+            #expect(!restored.maximizeMigrationPending)
+        }
+    }
+
+    @Test("An interrupted migration retains fallback eligibility until registration succeeds")
+    func interruptedMigrationRemainsPending() throws {
+        try withDefaults { defaults in
+            var legacy = DirectionalShortcuts.default
+            legacy.left = Shortcut(keyCode: UInt32(kVK_ANSI_G), modifiers: UInt32(cmdKey))
+            defaults.set(try legacyData(legacy), forKey: legacyDirectionalKey)
+            let firstLaunch = Preferences(defaults: defaults)
+            #expect(firstLaunch.maximizeMigrationPending)
+            // No setDirectionalShortcuts call: startup registration failed or
+            // the process ended before completing its first registration.
+            let nextLaunch = Preferences(defaults: defaults)
+            #expect(nextLaunch.maximizeMigrationPending)
+            #expect(nextLaunch.directionalShortcuts == legacy)
+            var registeredFallback = nextLaunch.directionalShortcuts
+            registeredFallback.maximize = nil
+            nextLaunch.setDirectionalShortcuts(registeredFallback)
+            let completed = Preferences(defaults: defaults)
+            #expect(!completed.maximizeMigrationPending)
+            #expect(completed.directionalShortcuts == registeredFallback)
+        }
+    }
+
+    @Test("Successfully applying the unchanged set completes first-startup migration")
+    func unchangedSuccessfulRegistrationCompletesMigration() throws {
+        try withDefaults { defaults in
+            let preferences = Preferences(defaults: defaults)
+            #expect(preferences.maximizeMigrationPending)
+            preferences.setDirectionalShortcuts(preferences.directionalShortcuts)
+            #expect(!preferences.maximizeMigrationPending)
+            #expect(!Preferences(defaults: defaults).maximizeMigrationPending)
+        }
+    }
+
+    @Test("An existing Return chord remains assigned to its direction during migration")
+    func internalMigrationConflictLeavesMaximizeUnassigned() throws {
+        try withDefaults { defaults in
+            var legacy = DirectionalShortcuts.default
+            legacy.right = .defaultMaximize
+            defaults.set(try legacyData(legacy), forKey: legacyDirectionalKey)
+            let preferences = Preferences(defaults: defaults)
+            #expect(preferences.directionalShortcuts.right == .defaultMaximize)
+            #expect(preferences.directionalShortcuts.maximize == nil)
+            #expect(preferences.directionalShortcuts.validationMessage == nil)
+            #expect(preferences.shortcutMigrationNotice != nil)
+            let restored = Preferences(defaults: defaults)
+            #expect(restored.directionalShortcuts == preferences.directionalShortcuts)
+            #expect(restored.directionalShortcuts.maximize == nil)
+        }
+    }
+
+    @Test("An unassigned or custom Maximize survives restart")
+    func optionalMaximizePersistence() throws {
+        try withDefaults { defaults in
+            let preferences = Preferences(defaults: defaults)
+            for shortcut in [nil, Shortcut(keyCode: UInt32(kVK_ANSI_M), modifiers: UInt32(cmdKey | optionKey))] {
+                var bindings = preferences.directionalShortcuts
+                bindings.maximize = shortcut
+                preferences.setDirectionalShortcuts(bindings)
+                #expect(Preferences(defaults: defaults).directionalShortcuts == bindings)
+            }
+        }
+    }
+
+    @Test("The current schema ignores stale direction data even when malformed")
+    func presentCurrentSchemaWins() throws {
+        try withDefaults { defaults in
+            var legacy = DirectionalShortcuts.default
+            legacy.left = Shortcut(keyCode: UInt32(kVK_ANSI_G), modifiers: UInt32(cmdKey))
+            defaults.set(try legacyData(legacy), forKey: legacyDirectionalKey)
+            defaults.set("bad", forKey: shortcutKey)
+            let preferences = Preferences(defaults: defaults)
+            #expect(preferences.directionalShortcuts == .default)
+            #expect(!preferences.maximizeMigrationPending)
+            #expect(defaults.object(forKey: legacyDirectionalKey) == nil)
+        }
+    }
+
+    @Test("Invalid v2 data recovers to five usable defaults")
+    func invalidLegacyDirectionsRecover() throws {
+        try withDefaults { defaults in
+            var duplicate = DirectionalShortcuts.default
+            duplicate.left = duplicate.right
+            let invalidData = [Data("not JSON".utf8), try legacyData(duplicate)]
+            for data in invalidData {
+                defaults.removeObject(forKey: shortcutKey)
+                defaults.set(data, forKey: legacyDirectionalKey)
+                let preferences = Preferences(defaults: defaults)
+                #expect(preferences.directionalShortcuts == .default)
+                #expect(preferences.maximizeMigrationPending)
+            }
+        }
+    }
 
     @Test("A new installation has usable directional defaults")
     func freshDefaults() throws {
@@ -26,7 +144,7 @@ struct PreferencesTests {
         }
     }
 
-    @Test("All four shortcuts and layout settings survive a fresh model")
+    @Test("All five shortcuts and layout settings survive a fresh model")
     func persistenceAcrossInstances() throws {
         try withDefaults { defaults in
             let preferences = Preferences(defaults: defaults)
@@ -49,7 +167,7 @@ struct PreferencesTests {
         }
     }
 
-    @Test("The old single key migrates to four defaults without resetting layout or gap")
+    @Test("The old single key migrates to placement defaults without resetting layout or gap")
     func legacyShortcutMigration() throws {
         try withDefaults { defaults in
             let legacy = Shortcut(keyCode: UInt32(kVK_ANSI_G), modifiers: UInt32(cmdKey | shiftKey))
@@ -65,7 +183,7 @@ struct PreferencesTests {
         }
     }
 
-    @Test("Valid v2 shortcuts take precedence over a stale legacy value")
+    @Test("Valid v3 shortcuts take precedence over stale legacy values")
     func currentSchemaWinsDuringMigration() throws {
         try withDefaults { defaults in
             var bindings = DirectionalShortcuts.default
@@ -212,7 +330,7 @@ struct PreferencesTests {
         }
     }
 
-    @Test("Malformed or partial v2 shortcut storage recovers as one complete set")
+    @Test("Malformed or partial v3 shortcut storage recovers as one complete set")
     func malformedShortcutStorage() throws {
         try withDefaults { defaults in
             let invalidValues: [Any] = [
@@ -330,6 +448,13 @@ struct PreferencesTests {
         #expect(shortcut.modifiers == UInt32(cmdKey | optionKey))
         #expect(shortcut.displayString == "⌥⌘G")
         #expect(shortcut.validationMessage == nil)
+    }
+
+    private func legacyData(_ shortcuts: DirectionalShortcuts) throws -> Data {
+        try JSONEncoder().encode([
+            "left": shortcuts.left, "right": shortcuts.right,
+            "up": shortcuts.up, "down": shortcuts.down,
+        ])
     }
 
     private var invalidShortcuts: [Shortcut] {

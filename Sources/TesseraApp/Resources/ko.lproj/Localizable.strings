@@ -139,8 +139,9 @@
 "moving the resized window" = "크기 조절 후 창 이동";
 "reading the final window frame" = "최종 창 위치와 크기 읽기";
 "Window arranged." = "창을 배치했습니다.";
-"The window did not accept the exact requested size or position. It remains within the usable display area." = "앱이 요청한 크기나 위치를 그대로 적용하지 않았습니다. 창은 사용 가능한 화면 영역 안에 있습니다.";
-"The window did not accept the exact requested size or position. It could not be fitted fully inside the usable display area." = "앱이 요청한 크기나 위치를 그대로 적용하지 않았습니다. 창을 사용 가능한 화면 영역 안에 완전히 맞추지 못했습니다.";
+"Arranged · Adjusted to app size" = "배치됨 · 앱 크기에 맞춤";
+"The window could not be aligned to the requested position." = "창을 요청한 위치에 맞추지 못했습니다.";
+"The window could not fit fully inside the usable display area." = "창을 사용 가능한 화면 영역 안에 완전히 맞추지 못했습니다.";
 "Arrangement was cancelled before the window was changed." = "창을 변경하기 전에 배치가 취소되었습니다.";
 "Arrangement was cancelled." = "창 배치가 취소되었습니다.";
 "Placement stopped while %@. The window may be partly arranged. %@" = "%@ 중에 배치가 중단되었습니다. 창이 일부 변경되었을 수 있습니다. %@";
@@ -182,3 +183,15 @@
 "Apply shortcuts again to see the current status." = "현재 상태를 확인하려면 단축키를 다시 적용하세요.";
 "Expanded" = "펼쳐짐";
 "Collapsed" = "접힘";
+"Maximize" = "최대화";
+"Top half of screen" = "화면 위쪽 절반";
+"Bottom half of screen" = "화면 아래쪽 절반";
+"Window shortcuts" = "창 배치 단축키";
+"Choose a different key for each action. Include ⌘, ⌃, or ⌥." = "각 동작에 서로 다른 키를 지정해 주세요. ⌘, ⌃ 또는 ⌥를 포함해야 합니다.";
+"Clear maximize shortcut" = "최대화 단축키 지우기";
+"Fill the usable display without gaps. Use arrows to return to the grid." = "사용 가능한 화면을 여백 없이 채웁니다. 방향키로 격자 배치로 돌아갈 수 있습니다.";
+"Window shortcuts applied." = "창 배치 단축키를 적용했습니다.";
+"Not assigned" = "지정되지 않음";
+"Record a window shortcut, then use Apply Shortcuts to save all five." = "창 배치 단축키를 기록한 다음 단축키 적용을 눌러 다섯 동작을 함께 저장하세요.";
+"Maximize shortcut was not assigned because a direction already uses it. Your direction shortcuts are unchanged." = "방향 이동에 사용 중인 조합이어서 최대화 단축키를 지정하지 않았습니다. 기존 방향 단축키는 유지됩니다.";
+"Maximize shortcut was not assigned. Your direction shortcuts are unchanged. %@" = "최대화 단축키를 지정하지 못했습니다. 기존 방향 단축키는 유지됩니다. %@";

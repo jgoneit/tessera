@@ -6,6 +6,22 @@ import Testing
 @Suite("Shortcut recording bridge")
 @MainActor
 struct ShortcutRecordingTests {
+    @Test("An unassigned recorder displays a label and accepts the registered Maximize chord")
+    func unassignedRecorderAcceptsMaximize() {
+        let bridge = ShortcutRecordingBridge()
+        let button = ShortcutRecorderButton()
+        button.current = nil
+        button.refreshTitle()
+        #expect(button.title == L10n.text("Not assigned"))
+        var recorded: [Shortcut] = []
+        button.onRecord = { recorded.append($0) }
+        bridge.beginRecording(button)
+        bridge.receiveRegistered(.defaultMaximize)
+        #expect(recorded == [.defaultMaximize])
+        #expect(button.current == nil)
+        #expect(!button.isRecording)
+    }
+
     @Test("Changing presentation preferences ends recording before another registered key arrives")
     func presentationChangeCancelsRecording() {
         let bridge = ShortcutRecordingBridge()

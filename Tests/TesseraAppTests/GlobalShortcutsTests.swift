@@ -7,12 +7,123 @@ import TesseraCore
 @Suite("Directional global shortcut registry and input")
 @MainActor
 struct GlobalShortcutsTests {
+    @Test("Every configured physical chord maps to its placement action")
+    func everyActionMapping() throws {
+        let harness = try Harness.registered()
+        #expect(harness.backend.bindings.count == 5)
+        for action in PlacementAction.allCases {
+            let shortcut = try #require(DirectionalShortcuts.default[action])
+            harness.emit(shortcut, .pressed)
+            harness.emit(shortcut, .released)
+        }
+        #expect(harness.observer.actions == PlacementAction.allCases)
+    }
+
+    @Test("Maximize requires release and interrupts an active horizontal repeat")
+    func maximizeIsOneShot() throws {
+        let harness = try Harness.registered()
+        harness.emit(.defaultLeft, .pressed)
+        harness.clock.advance(by: 0.51)
+        harness.emit(.defaultMaximize, .pressed)
+        for _ in 0..<20 { harness.emit(.defaultMaximize, .pressed) }
+        harness.clock.advance(by: 2)
+        #expect(harness.observer.actions == [.direction(.left), .direction(.left), .maximize])
+        harness.emit(.defaultMaximize, .released)
+        harness.emit(.defaultMaximize, .pressed)
+        #expect(harness.observer.actions.last == .maximize)
+        #expect(harness.observer.actions.count == 4)
+    }
+
+    @Test("An unassigned Maximize keeps four direction registrations")
+    func optionalMaximize() throws {
+        let harness = try Harness.registered()
+        var bindings = DirectionalShortcuts.default
+        bindings.maximize = nil
+        try harness.registry.register(bindings)
+        #expect(harness.backend.bindings.count == 4)
+        #expect(!harness.registry.contains(.defaultMaximize))
+        harness.emit(.defaultLeft, .pressed)
+        #expect(harness.observer.actions == [.direction(.left)])
+    }
+
+    @Test("A new Maximize conflict migrates with every existing direction usable")
+    func firstStartupMaximizeConflict() throws {
+        let harness = Harness()
+        harness.backend.rejected.insert(.defaultMaximize)
+        let result = try harness.registry.registerAtStartup(.default, allowMaximizeFallback: true)
+        #expect(result.bindings.maximize == nil)
+        #expect(result.warning != nil)
+        #expect(harness.backend.bindings.count == 4)
+        for direction in GridDirection.allCases {
+            let shortcut = result.bindings[direction]
+            #expect(shortcut == DirectionalShortcuts.default[direction])
+            harness.emit(shortcut, .pressed)
+            harness.emit(shortcut, .released)
+        }
+        #expect(harness.observer.actions == GridDirection.allCases.map(PlacementAction.direction))
+    }
+
+    @Test("Later Maximize conflicts reject the whole edit and preserve the old set")
+    func laterMaximizeConflictDoesNotFallback() throws {
+        let harness = try Harness.registered()
+        let original = harness.backend.bindings
+        var replacement = DirectionalShortcuts.default
+        replacement.left = Shortcut(keyCode: 0, modifiers: UInt32(controlKey))
+        replacement.maximize = Shortcut(keyCode: 1, modifiers: UInt32(controlKey))
+        harness.backend.rejected.insert(try #require(replacement.maximize))
+        #expect(throws: (any Error).self) {
+            try harness.registry.registerAtStartup(replacement, allowMaximizeFallback: false)
+        }
+        #expect(harness.backend.bindings == original)
+        harness.emit(.defaultMaximize, .pressed)
+        #expect(harness.observer.actions == [.maximize])
+    }
+
+    @Test("An existing direction conflict cannot be hidden by Maximize fallback")
+    func directionConflictDoesNotFallback() {
+        let harness = Harness()
+        harness.backend.rejected.insert(.defaultLeft)
+        #expect(throws: (any Error).self) {
+            try harness.registry.registerAtStartup(.default, allowMaximizeFallback: true)
+        }
+        #expect(harness.backend.bindings.isEmpty)
+    }
+
+    @Test("A direction and Maximize can exchange physical keys atomically")
+    func exchangeWithMaximize() throws {
+        let harness = try Harness.registered()
+        let original = harness.backend.bindings
+        var replacement = DirectionalShortcuts.default
+        replacement.left = .defaultMaximize
+        replacement.maximize = .defaultLeft
+        try harness.registry.register(replacement)
+        #expect(harness.backend.bindings == original)
+        #expect(harness.backend.attempts.count == 5)
+        harness.emit(.defaultLeft, .pressed)
+        harness.emit(.defaultMaximize, .pressed)
+        #expect(harness.observer.actions == [.maximize, .direction(.left)])
+    }
+
+    @Test("Recording a registered Maximize chord forwards the key without placing")
+    func recordingMaximizeKeepsPhysicalChord() throws {
+        let harness = try Harness.registered()
+        harness.registry.setRecording(true)
+        harness.emit(.defaultMaximize, .pressed)
+        harness.clock.advance(by: 2)
+        #expect(harness.observer.recorded == [.defaultMaximize])
+        #expect(harness.observer.actions.isEmpty)
+        #expect(harness.backend.bindings.count == 5)
+    }
+
     @Test("Invalid or duplicate bindings never reach the registration backend")
     func validatesBeforeRegistration() throws {
         let harness = Harness()
         var duplicate = DirectionalShortcuts.default
         duplicate.down = duplicate.up
         #expect(duplicate.validationMessage != nil)
+        #expect(throws: (any Error).self) { try harness.registry.register(duplicate) }
+        duplicate = .default
+        duplicate.maximize = duplicate.left
         #expect(throws: (any Error).self) { try harness.registry.register(duplicate) }
         var invalid = DirectionalShortcuts.default
         invalid.left = Shortcut(keyCode: 123, modifiers: 0)
@@ -30,7 +141,7 @@ struct GlobalShortcutsTests {
             try harness.registry.register(replacement)
             Issue.record("Expected the conflicting shortcut to fail")
         } catch ShortcutRegistrationError.binding(let direction, let message) {
-            #expect(direction == .right)
+            #expect(direction == .direction(.right))
             #expect(message == L10n.text("Another app is using this shortcut. Choose another combination."))
             #expect(ShortcutRegistrationError.binding(direction, message).localizedDescription.hasPrefix(L10n.text("Right") + ":"))
         }
@@ -51,7 +162,7 @@ struct GlobalShortcutsTests {
         #expect(harness.backend.bindings == old)
         #expect(!harness.registry.contains(replacement.left))
         harness.emit(.defaultLeft, .pressed)
-        #expect(harness.observer.actions == [.left])
+        #expect(harness.observer.actions == [.direction(.left)])
     }
 
     @Test("Exchanging directions reuses the physical registrations")
@@ -63,9 +174,9 @@ struct GlobalShortcutsTests {
         replacement.right = .defaultLeft
         try harness.registry.register(replacement)
         #expect(harness.backend.bindings == original)
-        #expect(harness.backend.attempts.count == 4)
+        #expect(harness.backend.attempts.count == 5)
         harness.emit(.defaultLeft, .pressed)
-        #expect(harness.observer.actions == [.right])
+        #expect(harness.observer.actions == [.direction(.right)])
     }
 
     @Test("Stale events for removed registrations cannot invoke a new action")
@@ -87,10 +198,10 @@ struct GlobalShortcutsTests {
         let shortcut = DirectionalShortcuts.default[direction]
         for _ in 0..<20 { harness.emit(shortcut, .pressed) }
         harness.clock.advance(by: 10)
-        #expect(harness.observer.actions == [direction])
+        #expect(harness.observer.actions == [.direction(direction)])
         harness.emit(shortcut, .released)
         harness.emit(shortcut, .pressed)
-        #expect(harness.observer.actions == [direction, direction])
+        #expect(harness.observer.actions == [.direction(direction), .direction(direction)])
     }
 
     @Test("Horizontal repeat uses the clock and ignores Carbon duplicate presses")
@@ -99,11 +210,11 @@ struct GlobalShortcutsTests {
         harness.emit(.defaultLeft, .pressed)
         for _ in 0..<20 { harness.emit(.defaultLeft, .pressed) }
         harness.clock.advance(by: 0.49)
-        #expect(harness.observer.actions == [.left])
+        #expect(harness.observer.actions == [.direction(.left)])
         harness.clock.advance(by: 0.02)
-        #expect(harness.observer.actions == [.left, .left])
+        #expect(harness.observer.actions == [.direction(.left), .direction(.left)])
         harness.clock.advance(by: 0.10)
-        #expect(harness.observer.actions == [.left, .left, .left])
+        #expect(harness.observer.actions == [.direction(.left), .direction(.left), .direction(.left)])
         harness.emit(.defaultLeft, .released)
         harness.clock.advance(by: 2)
         #expect(harness.observer.actions.count == 3)
@@ -115,14 +226,14 @@ struct GlobalShortcutsTests {
         harness.emit(.defaultRight, .pressed)
         harness.modifiers.value = UInt32(controlKey)
         harness.clock.advance(by: 1)
-        #expect(harness.observer.actions == [.right])
+        #expect(harness.observer.actions == [.direction(.right)])
         harness.modifiers.value = UInt32(controlKey | optionKey)
         harness.emit(.defaultRight, .pressed)
         harness.clock.advance(by: 1)
-        #expect(harness.observer.actions == [.right])
+        #expect(harness.observer.actions == [.direction(.right)])
         harness.emit(.defaultRight, .released)
         harness.emit(.defaultRight, .pressed)
-        #expect(harness.observer.actions == [.right, .right])
+        #expect(harness.observer.actions == [.direction(.right), .direction(.right)])
     }
 
     @Test("Only the most recently pressed direction can repeat")
@@ -133,10 +244,10 @@ struct GlobalShortcutsTests {
         harness.emit(.defaultRight, .pressed)
         harness.emit(.defaultLeft, .released)
         harness.clock.advance(by: 0.51)
-        #expect(harness.observer.actions == [.left, .right, .right])
+        #expect(harness.observer.actions == [.direction(.left), .direction(.right), .direction(.right)])
         harness.emit(DirectionalShortcuts.default.up, .pressed)
         harness.clock.advance(by: 1)
-        #expect(harness.observer.actions == [.left, .right, .right, .up])
+        #expect(harness.observer.actions == [.direction(.left), .direction(.right), .direction(.right), .direction(.up)])
     }
 
     @Test("Cancellation suppresses a held key until release")
@@ -147,10 +258,10 @@ struct GlobalShortcutsTests {
         harness.clock.advance(by: 0.1)
         for _ in 0..<20 { harness.emit(.defaultLeft, .pressed) }
         harness.clock.advance(by: 2)
-        #expect(harness.observer.actions == [.left])
+        #expect(harness.observer.actions == [.direction(.left)])
         harness.emit(.defaultLeft, .released)
         harness.emit(.defaultLeft, .pressed)
-        #expect(harness.observer.actions == [.left, .left])
+        #expect(harness.observer.actions == [.direction(.left), .direction(.left)])
     }
 
     @Test("A press queued before cancellation stays suppressed through later repeats")
@@ -166,7 +277,7 @@ struct GlobalShortcutsTests {
         #expect(harness.observer.actions.isEmpty)
         harness.emit(.defaultLeft, .released)
         harness.emit(.defaultLeft, .pressed)
-        #expect(harness.observer.actions == [.left])
+        #expect(harness.observer.actions == [.direction(.left)])
     }
 
     @Test("An event queued before reassignment cannot execute the new direction")
@@ -183,7 +294,7 @@ struct GlobalShortcutsTests {
         #expect(harness.observer.actions.isEmpty)
         harness.emit(.defaultLeft, .released)
         harness.emit(.defaultLeft, .pressed)
-        #expect(harness.observer.actions == [.right])
+        #expect(harness.observer.actions == [.direction(.right)])
     }
 
     @Test("Recording keeps reservations and forwards one existing chord without moving")
@@ -204,7 +315,7 @@ struct GlobalShortcutsTests {
         #expect(harness.observer.actions.isEmpty)
         harness.emit(.defaultLeft, .released)
         harness.emit(.defaultLeft, .pressed)
-        #expect(harness.observer.actions == [.left])
+        #expect(harness.observer.actions == [.direction(.left)])
     }
 
     @Test("Synchronous cancellation by the first action prevents scheduling a repeat")
@@ -216,7 +327,7 @@ struct GlobalShortcutsTests {
         }
         harness.emit(.defaultRight, .pressed)
         harness.clock.advance(by: 2)
-        #expect(harness.observer.actions == [.right])
+        #expect(harness.observer.actions == [.direction(.right)])
     }
 
     @Test("Failed cleanup stays inert and is retried on the next registry operation")
@@ -244,7 +355,7 @@ struct GlobalShortcutsTests {
         harness.registry.unregister()
         harness.clock.advance(by: 2)
         harness.backend.onEvent?(RegisteredShortcutEvent(id: id, phase: .pressed, timestamp: harness.clock.now))
-        #expect(harness.observer.actions == [.left])
+        #expect(harness.observer.actions == [.direction(.left)])
         #expect(harness.backend.bindings.isEmpty)
     }
 
@@ -256,7 +367,7 @@ struct GlobalShortcutsTests {
         harness.emit(.defaultLeft, .pressed)
         harness.emit(.defaultLeft, .released, timestamp: previousTime)
         harness.clock.advance(by: 0.51)
-        #expect(harness.observer.actions == [.left, .left])
+        #expect(harness.observer.actions == [.direction(.left), .direction(.left)])
     }
 
     @Test("Reapplying unchanged bindings does not interrupt a held key")
@@ -265,8 +376,8 @@ struct GlobalShortcutsTests {
         harness.emit(.defaultLeft, .pressed)
         try harness.registry.register(.default)
         harness.clock.advance(by: 0.51)
-        #expect(harness.observer.actions == [.left, .left])
-        #expect(harness.backend.attempts.count == 4)
+        #expect(harness.observer.actions == [.direction(.left), .direction(.left)])
+        #expect(harness.backend.attempts.count == 5)
     }
 }
 
@@ -311,7 +422,7 @@ private final class ModifierState { var value = UInt32(controlKey | optionKey) }
 
 @MainActor
 private final class InputObserver {
-    var actions: [GridDirection] = []
+    var actions: [PlacementAction] = []
     var recorded: [Shortcut] = []
     var errors: [String] = []
 }
