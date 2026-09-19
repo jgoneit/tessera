@@ -76,6 +76,22 @@ test('unknown messages and incomplete interpolation fail instead of displaying b
   assert.equal(t('unsupported', 'height.full'), 'Full column');
 });
 
+test('screen-wide labels are independent of the preview grid in both languages', () => {
+  const labels = {
+    ko: { label: '화면 전체 너비', top: '화면 위쪽 절반', full: '최대화', bottom: '화면 아래쪽 절반' },
+    en: { label: 'Full screen width', top: 'Top half of screen', full: 'Maximized', bottom: 'Bottom half of screen' }
+  };
+  for (const language of ['ko', 'en']) {
+    for (const [state, expected] of Object.entries(labels[language])) {
+      assert.equal(t(language, `screen.${state}`), expected);
+      assert.deepEqual(placeholders(messages[language][`screen.${state}`]), []);
+      assert.doesNotMatch(t(language, `screen.${state}`), /[234]×2|Column|열 ·/);
+    }
+    assert.equal(t(language, 'action.maximize'), language === 'ko' ? '최대화' : 'Maximize');
+    assert.equal(t(language, 'usage.maximizeKeys'), 'Control Option Return');
+  }
+});
+
 test('every HTML translation binding resolves without interpolation in either language', () => {
   const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   const bindings = [...html.matchAll(/\b(data-i18n(?:-aria-label|-title)?)="([^"]+)"/g)];
@@ -99,6 +115,8 @@ test('switching document language updates visible copy, accessible names, and me
   });
   const heading = element({ 'data-i18n': 'hero.title1' });
   const button = element({ 'data-i18n-aria-label': 'direction.left', 'data-i18n-title': 'theme.title' });
+  const maximizeButton = element({ 'data-i18n': 'action.maximize', 'data-i18n-aria-label': 'action.maximizeLabel' });
+  const screenStates = ['top', 'full', 'bottom'].map(state => element({ 'data-i18n': `screen.${state}` }));
   const metadata = new Map([
     ['meta[name="description"]', element({})],
     ['meta[property="og:title"]', element({})],
@@ -109,7 +127,7 @@ test('switching document language updates visible copy, accessible names, and me
     title: '',
     querySelector(selector) { return metadata.get(selector); },
     querySelectorAll(selector) {
-      return [heading, button].filter(node => Object.hasOwn(node.attributes, selector.slice(1, -1)));
+      return [heading, button, maximizeButton, ...screenStates].filter(node => Object.hasOwn(node.attributes, selector.slice(1, -1)));
     }
   };
   for (const language of ['en', 'ko']) {
@@ -119,6 +137,11 @@ test('switching document language updates visible copy, accessible names, and me
     assert.equal(heading.textContent, messages[language]['hero.title1']);
     assert.equal(button.getAttribute('aria-label'), messages[language]['direction.left']);
     assert.equal(button.getAttribute('title'), messages[language]['theme.title']);
+    assert.equal(maximizeButton.textContent, messages[language]['action.maximize']);
+    assert.equal(maximizeButton.getAttribute('aria-label'), messages[language]['action.maximizeLabel']);
+    for (const state of screenStates) {
+      assert.equal(state.textContent, messages[language][state.dataset.i18n]);
+    }
     assert.equal(metadata.get('meta[name="description"]').getAttribute('content'), messages[language]['meta.description']);
     assert.equal(metadata.get('meta[property="og:title"]').getAttribute('content'), document.title);
     assert.equal(metadata.get('meta[property="og:description"]').getAttribute('content'), messages[language]['meta.socialDescription']);
