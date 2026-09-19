@@ -48,12 +48,7 @@ struct SettingsView: View {
             Image(nsImage: AppIcon.image)
                 .resizable().scaledToFit().frame(width: 48, height: 48)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Tessera").font(.system(size: 22, weight: .semibold))
-                Text(t("Arrange your windows, one shortcut at a time."))
-                    .font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text("Tessera").font(.system(size: 22, weight: .semibold))
             Spacer(minLength: 8)
             Text("v0.1")
                 .font(.caption.weight(.medium)).foregroundStyle(.secondary)
