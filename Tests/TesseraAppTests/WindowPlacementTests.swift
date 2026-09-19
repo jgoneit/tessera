@@ -35,6 +35,8 @@ struct WindowPlacementTests {
         let window = PlacementWindowFake(frame: initial, bounds: bounds)
         let result = window.place(requested)
         #expect(result.outcome == .applied)
+        #expect(result.constraintReason == nil)
+        #expect(result.feedbackDuration == .seconds(1))
         #expect(result.actualFrame == requested)
         #expect(window.writes.count == 3)
         #expect(window.resizeCount == 1)
@@ -124,10 +126,94 @@ struct WindowPlacementTests {
         #expect(window.writes.count == 3)
         if minimum.width > bounds.width {
             #expect(result.actualFrame?.origin == bounds.origin)
-            #expect(result.message == L10n.text("The window did not accept the exact requested size or position. It could not be fitted fully inside the usable display area."))
+            #expect(result.constraintReason == .outsideVisibleArea)
+            #expect(result.feedbackDuration == .seconds(4))
+            #expect(result.message == L10n.text("The window could not fit fully inside the usable display area."))
         } else {
-            #expect(result.message == L10n.text("The window did not accept the exact requested size or position. It remains within the usable display area."))
+            #expect(result.constraintReason == .sizeAdjusted)
+            #expect(result.feedbackDuration == .seconds(1))
+            #expect(result.message == L10n.text("Arranged · Adjusted to app size"))
         }
+    }
+
+    @Test("Observed 474.5pt halves align correctly when the app requires a 600pt height",
+          arguments: [2, 3], [false, true])
+    func observedMinimumHeight(columns: Int, bottom: Bool) {
+        let display = CGRect(x: 0, y: 33, width: 1512, height: 949)
+        let width = display.width / CGFloat(columns)
+        let initial = CGRect(x: width, y: 33, width: width, height: 949)
+        let requested = CGRect(x: width, y: bottom ? 507.5 : 33, width: width, height: 474.5)
+        let window = PlacementWindowFake(frame: initial, bounds: display)
+        window.minimumSize = CGSize(width: 0, height: 600)
+
+        let result = window.place(requested)
+
+        #expect(result.outcome == .constrained)
+        #expect(result.constraintReason == .sizeAdjusted)
+        #expect(result.message == L10n.text("Arranged · Adjusted to app size"))
+        #expect(result.feedbackDuration == .seconds(1))
+        #expect(result.actualFrame == CGRect(x: width, y: bottom ? 382 : 33, width: width, height: 600))
+        #expect(window.writes == [.size(requested.size),
+            .position(CGPoint(x: width, y: bottom ? 382 : 33))])
+        #expect(window.resizeCount == 1)
+        #expect(window.positionCount == 1)
+        #expect(window.traces.map { $0.0 } == ["requested", "initial", "resized", "final"])
+    }
+
+    @Test("Alignment is judged against the final size when the app adjusts again during its move")
+    func finalSizeDeterminesAlignment() {
+        let display = CGRect(x: 0, y: 33, width: 1512, height: 949)
+        let requested = CGRect(x: 504, y: 507.5, width: 504, height: 474.5)
+        let window = PlacementWindowFake(frame: CGRect(x: 504, y: 33, width: 504, height: 949), bounds: display)
+        window.minimumSize = CGSize(width: 0, height: 600)
+        // After accepting the 600pt resize, the app reports a 610pt window
+        // aligned to the bottom edge by its own final move handling.
+        window.readFrames[3] = CGRect(x: 504, y: 372, width: 504, height: 610)
+
+        let result = window.place(requested)
+
+        #expect(result.outcome == .constrained)
+        #expect(result.constraintReason == .sizeAdjusted)
+        #expect(result.actualFrame == window.readFrames[3])
+        #expect(result.feedbackDuration == .seconds(1))
+        #expect(window.writes == [.size(requested.size), .position(CGPoint(x: 504, y: 382))])
+    }
+
+    @Test("An ignored final move is a position mismatch even when resizing also has constraints",
+          arguments: [CGSize.zero, CGSize(width: 700, height: 600)])
+    func ignoredFinalPosition(_ minimum: CGSize) throws {
+        let requested = try frame(.twoByTwo, .zone(2))
+        let initial = CGRect(x: 100, y: 200, width: 300, height: 300)
+        let window = PlacementWindowFake(frame: initial, bounds: bounds)
+        window.minimumSize = minimum
+        window.ignoreFirstPosition = true
+
+        let result = window.place(requested)
+
+        #expect(result.outcome == .constrained)
+        #expect(result.constraintReason == .positionMismatch)
+        #expect(result.message == L10n.text("The window could not be aligned to the requested position."))
+        #expect(result.feedbackDuration == .seconds(4))
+        #expect(result.actualFrame?.origin == initial.origin)
+        #expect(window.writes.count == 2)
+        #expect(window.resizeCount == 1)
+        #expect(window.positionCount == 1)
+    }
+
+    @Test("Outside-display readback takes precedence over its position mismatch")
+    func outsideDisplayPrecedesPositionMismatch() throws {
+        let requested = try frame(.twoByTwo, .column(2))
+        let window = PlacementWindowFake(frame: try frame(.threeByTwo, .column(2)), bounds: bounds)
+        window.readOffsets[3] = CGPoint(x: 9, y: 0)
+
+        let result = window.place(requested)
+
+        #expect(result.outcome == .constrained)
+        #expect(result.constraintReason == .outsideVisibleArea)
+        #expect(result.message == L10n.text("The window could not fit fully inside the usable display area."))
+        #expect(result.feedbackDuration == .seconds(4))
+        #expect(try #require(result.actualFrame).maxX > bounds.maxX)
+        #expect(window.writes.count == 2)
     }
 
     @Test("An ignored preparation move ends with honest constrained readback and no retry")
@@ -137,6 +223,7 @@ struct WindowPlacementTests {
         window.ignoreFirstPosition = true
         let result = window.place(requested)
         #expect(result.outcome == .constrained)
+        #expect(result.constraintReason == .sizeAdjusted)
         #expect(try #require(result.actualFrame).width < requested.width)
         #expect(window.resizeCount == 1)
         #expect(window.positionCount == 2)
@@ -151,6 +238,7 @@ struct WindowPlacementTests {
         window.readOffsets[3] = CGPoint(x: offset, y: -offset)
         let result = window.place(requested)
         #expect(result.outcome == (offset < 0.001 ? .applied : .constrained))
+        #expect(result.constraintReason == (offset < 0.001 ? nil : .positionMismatch))
         #expect(window.writes.count == 2)
     }
 
@@ -164,6 +252,8 @@ struct WindowPlacementTests {
             #expect(window.writes.count == max(0, boundary - 2))
             #expect(window.validationCount == boundary)
             #expect(result.outcome == (boundary <= 2 ? .unavailable : .failed))
+            #expect(result.constraintReason == nil)
+            #expect(result.feedbackDuration == .seconds(4))
             if boundary > 2 { #expect(result.message.contains(L10n.text("The window may be partly arranged."))) }
         }
     }
@@ -218,6 +308,8 @@ struct WindowPlacementTests {
         window.failWrite = write
         let result = window.place(try frame(.twoByTwo, .column(2)))
         #expect(result.outcome == .failed)
+        #expect(result.constraintReason == nil)
+        #expect(result.feedbackDuration == .seconds(4))
         #expect(result.message.contains(L10n.text("The window may be partly arranged.")))
         #expect(window.writes.count == write)
         #expect(window.readCount == write + 1) // one diagnostic read after the setter error
@@ -301,6 +393,7 @@ private final class PlacementWindowFake {
     var failReads: Set<Int> = []
     var invalidRead: Int?
     var readOffsets: [Int: CGPoint] = [:]
+    var readFrames: [Int: CGRect] = [:]
     private(set) var events: [String] = []
     private(set) var writes: [Write] = []
     private(set) var traces: [(String, CGRect)] = []
@@ -333,6 +426,7 @@ private final class PlacementWindowFake {
         events.append("read")
         if failReads.contains(readCount) { throw Failure.injected }
         if invalidRead == readCount { return CGRect(x: CGFloat.nan, y: 0, width: 10, height: 10) }
+        if let observed = readFrames[readCount] { return observed }
         if let offset = readOffsets[readCount] { return frame.offsetBy(dx: offset.x, dy: offset.y) }
         return frame
     }
