@@ -35,6 +35,19 @@ Verified through actual UI interactions in the Codex in-app browser.
 - After navigating to an anchor, changing language, and going back, the URL and displayed language
   agreed while selected grids and placement were preserved. No browser console errors were recorded.
 
+## Public deployment checks
+
+- Deployment source: `d7458d906d4fb7691c7213ce69fbb66718a6b442`.
+  Website checks and GitHub Pages deployment passed in
+  [GitHub Actions run 35439256103](https://github.com/jgoneit/tessera/actions/runs/35439256103).
+- All six public assets (HTML, CSS, app/navigation/i18n modules, and icon) returned HTTP 200
+  and matched the local source byte for byte. Modules were served with a JavaScript MIME type.
+- Reloaded the previously open public page and confirmed the new language button appeared.
+  Selecting 2×2+3×2, using arrow keys, and switching to English preserved the selection and height.
+  The Down button on the English page moved the top cell to its full column.
+- Reloading the [public English URL](https://jgoneit.github.io/tessera/?lang=en) retained the
+  English title and page copy. No browser console errors were recorded on the public page.
+
 ## Validation boundaries
 
 - These results cover browser behavior and static translations. VoiceOver interaction and other
