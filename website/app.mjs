@@ -98,7 +98,7 @@ function navigate(direction) {
 
 layoutInputs.forEach(input => input.addEventListener('change', () => {
   const layouts = layoutInputs.filter(item => item.checked).map(item => Number(item.value));
-  if (layouts.length) state = setLayouts(state, layouts);
+  if (layouts.length) state = setLayouts(state, layouts, input.checked ? Number(input.value) : undefined);
   render();
 }));
 directionButtons.forEach(button => button.addEventListener('click', () => {

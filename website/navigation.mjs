@@ -67,11 +67,12 @@ export function selectZone(state, id) {
   };
 }
 
-/** Keep the vertical step and choose the nearest column in the new selection. */
-export function setLayouts(state, layouts) {
+/** Prefer a newly enabled grid while keeping the vertical step and all choices. */
+export function setLayouts(state, layouts, preferredColumns) {
   const enabled = enabledLayouts(layouts);
   const center = (2 * state.column - 1) / (2 * state.columns);
-  return stateAt(enabled, nearestCandidate(candidates(enabled), center), state.height);
+  const choices = candidates(enabled.includes(preferredColumns) ? [preferredColumns] : enabled);
+  return stateAt(enabled, nearestCandidate(choices, center), state.height);
 }
 
 export function selectedZones(state) {
