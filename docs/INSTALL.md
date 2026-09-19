@@ -1,5 +1,7 @@
 # Tessera 로컬 설치
 
+[한국어](INSTALL.md) | [English](INSTALL.en.md)
+
 Apple Developer Program에 가입하지 않아도 직접 빌드한 Tessera를 본인 Mac의 응용 프로그램 폴더에
 설치해 사용할 수 있습니다. 현재 빌드는 로컬 **ad hoc 서명**이며 Developer ID 서명과 Apple 공증은
 포함하지 않습니다. DMG는 앱을 복사하기 편하게 묶은 디스크 이미지이고, 공증을 대신하지 않습니다.

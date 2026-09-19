@@ -1,5 +1,7 @@
 # Tessera 소개페이지
 
+한국어 | [English](README.en.md)
+
 사용자가 제공한 `tessera---macos-grid-window-manager.zip`의 색상, 글자 크기, 카드와
 다운로드 동선을 바탕으로 만든 정적 소개페이지다. 원본 ZIP은 수정하지 않았다.
 공개 주소는 <https://jgoneit.github.io/tessera/>이다. 로컬 미리보기와 GitHub Pages
@@ -31,18 +33,34 @@ python3 -m http.server 8080 --bind 127.0.0.1 --directory website
 - 데모는 명시적인 중앙 열에서 시작하며 실제 AX 창 확보·프레임 인식·앱 제약을
   재현하지 않는다. 실제 앱 코드와 별도의 브라우저용 모델이다.
 
+## 언어
+
+상단의 **EN / 한국어** 버튼으로 소개·설치 안내와 데모의 현재 배치·접근성 이름을
+함께 전환한다. 격자 선택, 현재 열·높이와 테마는 그대로 유지한다.
+
+- [한국어](https://jgoneit.github.io/tessera/?lang=ko) · [English](https://jgoneit.github.io/tessera/?lang=en)
+- 유효한 URL의 `lang` → 저장한 선택 → 브라우저의 첫 지원 언어 순서로 적용한다.
+  지원 언어가 없으면 영어를 사용한다. 버튼으로 선택한 언어는 브라우저에 저장한다.
+- 번역은 `i18n.mjs`에서 관리한다. 한국어 정적 HTML이 기본이며 JavaScript 실행 후
+  문서 언어·제목·설명도 갱신한다. JavaScript를 실행하지 않는 링크 미리보기는
+  영어 URL에서도 한국어 제목을 표시할 수 있다.
+- JavaScript가 꺼져 있어도 다운로드와 한·영 문서 안내는 제공한다.
+
 ## 검증
 
 ```sh
-node --test website/navigation.test.mjs
+node --test website/*.test.mjs
 ```
 
-기존 앱의 Seal 검사와 웹 검증 범위는 `../docs/landing-page-validation.md`에 별도로 기록한다.
+기존 앱의 Seal 검사와 웹 검증 범위는 [소개페이지 검증 기록](../docs/landing-page-validation.md)에,
+이번 번역·언어 전환 검증은 [영문 지원 검증 기록](../docs/bilingual-validation.md)에 별도로 기록한다.
 다운로드 링크는 검증된 `v0.1.0-alpha.1` 릴리스를 가리킨다. 새 릴리스로 바꿀 때는
 두 다운로드 링크와 설치 안내 링크를 함께 갱신한다.
 `app.mjs` 변경 시 `index.html`의 script URL에 있는 `v`도 파일의 SHA-256 앞 12자리로
 갱신한다. 기존 방문자가 캐시된 이전 스크립트를 계속 실행하는 것을 막기 위한 값이다.
-`navigation.mjs`를 변경할 때도 해당 import URL의 버전을 갱신한 뒤 app 버전을 갱신한다.
+`navigation.mjs` 또는 `i18n.mjs`를 변경하면 해당 import URL의 버전을 갱신한 뒤
+app 버전을 갱신한다. `styles.css`도 HTML의 stylesheet URL에 같은 방식으로 버전을
+넣는다. `assets.test.mjs`는 각 버전이 실제 파일 내용과 일치하는지 확인한다.
 
 ## GitHub Pages
 
@@ -50,7 +68,7 @@ node --test website/navigation.test.mjs
 구문 검사를 통과한 파일만 GitHub Pages로 배포한다. PR에서는 준비/검사만 수행한다.
 Actions 화면에서 수동 실행할 수도 있다.
 
-공개 파일은 `index.html`, `styles.css`, `app.mjs`, `navigation.mjs`, `mark.svg`와
+공개 파일은 `index.html`, `styles.css`, `app.mjs`, `navigation.mjs`, `i18n.mjs`, `mark.svg`와
 워크플로가 생성하는 `.nojekyll`이다. 테스트·문서·네이티브 앱 파일은 웹 경로에
 배포하지 않는다. 저장소 Pages 설정의 Source는 **GitHub Actions**를 사용한다.
 

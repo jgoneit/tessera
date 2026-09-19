@@ -1,5 +1,9 @@
 # Tessera
 
+[한국어](README.md) | [English](README.en.md)
+
+[소개 페이지](https://jgoneit.github.io/tessera/?lang=ko)
+
 macOS용 **Grid-first Window Manager**. 현재 창을 격자의 열이나 번호가 있는 Zone에 배치합니다.
 SwiftUI·AppKit·Accessibility API로 만든 메뉴바 앱이며 외부 패키지를 사용하지 않습니다.
 
