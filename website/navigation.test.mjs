@@ -98,6 +98,31 @@ test('changing enabled grids chooses nearest prior center and retains height', (
   assert.deepEqual(setLayouts(centered, [3, 2, 3]).layouts, [2, 3]);
 });
 
+test('checking 2x2 immediately selects its nearest column with left tie-breaking', () => {
+  const centered = move(createState([3]), 'up');
+  const selected = setLayouts(centered, [3, 2], 2);
+  assert.deepEqual(selected, { layouts: [2, 3], columns: 2, column: 1, height: 'top' });
+  assert.deepEqual(selectedZones(selected), [1]);
+  assert.equal(centered.columns, 3);
+});
+
+test('checking 4x2 retains every enabled grid and height for the next arrow', () => {
+  const centered = move(createState([2, 3]), 'down');
+  const selected = setLayouts(centered, [2, 3, 4], 4);
+  assert.deepEqual(selected, { layouts: [2, 3, 4], columns: 4, column: 2, height: 'bottom' });
+  assert.deepEqual(selectedZones(selected), [6]);
+  assert.deepEqual(move(selected, 'right'), { layouts: [2, 3, 4], columns: 3, column: 2, height: 'bottom' });
+  assert.deepEqual(move(selected, 'left'), { layouts: [2, 3, 4], columns: 2, column: 1, height: 'bottom' });
+});
+
+test('removing the active grid ignores a disabled preference and uses remaining candidates', () => {
+  const selected = setLayouts(createState([2, 3]), [2, 3, 4], 4);
+  const expected = { layouts: [2, 3], columns: 2, column: 1, height: 'full' };
+  assert.deepEqual(setLayouts(selected, [2, 3]), expected);
+  assert.deepEqual(setLayouts(selected, [2, 3], 4), expected);
+  assert.deepEqual(setLayouts(selected, [2, 3], 99), expected);
+});
+
 test('navigation returns new state without changing previous selection', () => {
   const initial = Object.freeze({ layouts: Object.freeze([2, 3]), columns: 3, column: 2, height: 'full' });
   const right = move(initial, 'right');
