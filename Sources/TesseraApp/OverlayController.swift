@@ -329,33 +329,44 @@ struct ZoneSelectorView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 8) {
-                    Text(model.navigation.selectedPlacement.localizedLabel(language: language))
-                        .font(.callout.weight(.semibold)).lineLimit(1)
-                    Spacer(minLength: 4)
-                    Label(L10n.text(isFullHeight ? "Full height" : "Single zone", language: language),
-                        systemImage: isFullHeight ? "arrow.up.and.down" : "square")
-                        .font(.caption2.weight(.medium)).foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+                Text(model.navigation.selectedPlacement.localizedLabel(language: language))
+                    .font(.callout.weight(.semibold)).lineLimit(1)
                 Text(model.status).font(.caption).foregroundStyle(.secondary)
                     .lineLimit(2).frame(height: 28, alignment: .topLeading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            VStack(spacing: 4) {
-                HStack(spacing: 12) {
-                    keyboardHint("← →", text: L10n.text("Columns", language: language))
-                    keyboardHint("↑ ↓", text: L10n.text("Height", language: language))
-                    Spacer(minLength: 0)
-                    keyboardHint("↵ esc", text: L10n.text("Keep placement", language: language))
-                }
-                Text(L10n.format("1–%d or click a zone to place and close", displayedLayout.zones.count, language: language))
-                    .font(.caption2).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            keyboardHints(zoneCount: displayedLayout.zones.count)
+                .frame(width: gridSize.width, alignment: .leading)
         }
         .padding(.horizontal, 20).padding(.vertical, 16)
         .modifier(OverlaySurface())
+    }
+
+    private func keyboardHints(zoneCount: Int) -> some View {
+        let columns = keyboardHint("← →", text: L10n.text("Columns", language: language))
+        let height = keyboardHint("↑ ↓", text: L10n.text("Height", language: language))
+        let place = keyboardHint(L10n.format("1–%d / click", zoneCount, language: language),
+            text: L10n.text("Place & close", language: language))
+        let finish = keyboardHint("↵ esc", text: L10n.text("Keep & close", language: language))
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                columns
+                height
+                place
+                finish
+            }
+            .fixedSize(horizontal: true, vertical: false)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 12) {
+                    columns
+                    height
+                }
+                HStack(spacing: 12) {
+                    place
+                    finish
+                }
+            }
+        }
     }
 
     private func keyboardHint(_ keys: String, text: String) -> some View {
@@ -363,6 +374,7 @@ struct ZoneSelectorView: View {
             TesseraKeycap(keys)
             Text(text).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
         }
+        .fixedSize(horizontal: true, vertical: false)
     }
 }
 

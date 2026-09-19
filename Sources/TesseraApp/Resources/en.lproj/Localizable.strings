@@ -57,6 +57,9 @@
 "Columns" = "Columns";
 "Height" = "Height";
 "Keep placement" = "Keep placement";
+"1–%d / click" = "1–%d / click";
+"Place & close" = "Place & close";
+"Keep & close" = "Keep & close";
 "Arrangement status" = "Arrangement status";
 "Display: %@" = "Display: %@";
 "Layout: %@" = "Layout: %@";
@@ -178,3 +181,5 @@
 "Last action" = "Last action";
 "Record %@ shortcut" = "Record %@ shortcut";
 "Apply shortcuts again to see the current status." = "Apply shortcuts again to see the current status.";
+"Expanded" = "Expanded";
+"Collapsed" = "Collapsed";

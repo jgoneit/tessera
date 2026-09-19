@@ -30,6 +30,14 @@ struct PresentationRenderTests {
                     .environment(\.locale, Locale(identifier: language.rawValue))
                 try render(content, size: CGSize(width: 680, height: 1320), theme: theme,
                     to: directory.appendingPathComponent("settings-\(language.rawValue)-\(theme.rawValue).png"))
+                for size in [CGSize(width: 680, height: 800), CGSize(width: 640, height: 620),
+                             CGSize(width: 640, height: 1320)] {
+                    try render(content, size: size, theme: theme,
+                        to: directory.appendingPathComponent(
+                            "settings-\(Int(size.width))x\(Int(size.height))-\(language.rawValue)-\(theme.rawValue).png"))
+                }
+                try render(content, size: CGSize(width: 640, height: 1320), theme: theme, highContrast: true,
+                    to: directory.appendingPathComponent("settings-high-contrast-\(language.rawValue)-\(theme.rawValue).png"))
             }
         }
     }
@@ -56,6 +64,29 @@ struct PresentationRenderTests {
                     try render(view, size: CGSize(width: 580, height: 546), theme: theme,
                         to: directory.appendingPathComponent("selector-\(layout.rawValue)-\(language.rawValue)-\(theme.rawValue).png"))
                 }
+                let bounds = CGRect(x: 0, y: 0, width: 5120, height: 2130)
+                let frame = try GridGeometry.frame(in: bounds, layout: .fourByTwo,
+                    target: .column(2), gap: 8, scale: 1)
+                let model = ZoneSelectionModel(navigation: GridNavigation(layout: .fourByTwo,
+                    windowFrame: frame, visibleFrame: bounds, gap: 8, scale: 1))
+                model.status = L10n.text(
+                    "The window did not accept the exact requested size or position. It remains within the usable display area.",
+                    language: language)
+                for highContrast in [false, true] {
+                    for width in [360.0, 620.0] {
+                        let gridSize = CGSize(width: width, height: width * bounds.height / bounds.width)
+                        let view = ZoneSelectorView(model: model,
+                            appName: "A development application with a long window title",
+                            displayName: "External ultrawide display with a long name",
+                            gridSize: gridSize, language: language, onSelect: { _ in })
+                            .environment(\.colorScheme, theme == .dark ? .dark : .light)
+                            .background(TesseraDesign.canvas)
+                        try render(view, size: CGSize(width: width + 40, height: gridSize.height + 196),
+                            theme: theme, highContrast: highContrast,
+                            to: directory.appendingPathComponent(
+                                "selector-long-\(Int(width))-\(highContrast ? "high-contrast" : "standard")-\(language.rawValue)-\(theme.rawValue).png"))
+                    }
+                }
                 let feedback = PlacementFeedbackView(message: L10n.text(
                     "The window did not accept the exact requested size or position. It remains within the usable display area.", language: language),
                     width: 440, language: language)
@@ -67,10 +98,16 @@ struct PresentationRenderTests {
         }
     }
 
-    private func render<V: View>(_ view: V, size: CGSize, theme: AppTheme, to url: URL) throws {
+    private func render<V: View>(_ view: V, size: CGSize, theme: AppTheme,
+                                highContrast: Bool = false, to url: URL) throws {
         let host = NSHostingView(rootView: view)
         host.frame = NSRect(origin: .zero, size: size)
-        host.appearance = NSAppearance(named: theme == .dark ? .darkAqua : .aqua)
+        let appearanceName: NSAppearance.Name = if highContrast {
+            theme == .dark ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua
+        } else {
+            theme == .dark ? .darkAqua : .aqua
+        }
+        host.appearance = NSAppearance(named: appearanceName)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = host

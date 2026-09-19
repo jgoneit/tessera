@@ -33,6 +33,8 @@ struct TesseraSurface<Content: View>: View {
 }
 
 struct TesseraKeycap: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
     let title: String
 
     init(_ title: String) { self.title = title }
@@ -43,11 +45,16 @@ struct TesseraKeycap: View {
             .foregroundStyle(.primary)
             .padding(.horizontal, 7)
             .padding(.vertical, 4)
-            .background(Color(nsColor: .textBackgroundColor),
-                in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(Color(nsColor: .textBackgroundColor))
+                    .shadow(color: .black.opacity(contrast == .increased ? 0 :
+                        (colorScheme == .dark ? 0.24 : 0.12)), radius: 0.5, x: 0, y: 1)
+            }
             .overlay {
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .strokeBorder(TesseraDesign.border, lineWidth: 0.5)
+                    .strokeBorder(contrast == .increased ? Color.primary : TesseraDesign.border,
+                        lineWidth: contrast == .increased ? 1 : 0.5)
                     .allowsHitTesting(false)
             }
             .fixedSize()
