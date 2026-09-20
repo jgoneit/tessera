@@ -11,11 +11,11 @@
 <p align="center">
   <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="최신 릴리스 (사전 릴리스 포함)" /></a>
   <a href="docs/INSTALL.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 이상" /></a>
-  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.3"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.2/Tessera-0.1.0-arm64.dmg"><strong>alpha.2 DMG 다운로드</strong></a> ·
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.3/Tessera-0.1.0-arm64.dmg"><strong>alpha.3 DMG 다운로드</strong></a> ·
   <a href="https://jgoneit.github.io/tessera/?lang=ko#demo"><strong>웹에서 직접 체험</strong></a> ·
   <a href="docs/INSTALL.md">설치 안내</a>
 </p>
@@ -102,7 +102,7 @@
 | 격자 / Layouts | 2×2, 3×2, 4×2 중 하나 이상 | 3×2만 선택 |
 | 창 간격 / Window spacing | 0, 4, 8, 12pt | 8pt |
 | Left / Right / Up / Down | 방향마다 서로 다른 키 조합 | Control+Option+각 방향키 |
-| 최대화 / Maximize | 별도 키 조합 또는 미지정 | Control+Option+Return |
+| 최대화 / Maximize | 별도 키 조합 | Control+Option+Return |
 
 Zone 번호는 좌상단에서 시작해 왼쪽에서 오른쪽, 위에서 아래 순서입니다.
 Gap은 인접 창 사이와 화면 가장자리에 똑같이 적용하며 최대화에서는 생략합니다.
@@ -113,7 +113,8 @@ Gap은 인접 창 사이와 화면 가장자리에 똑같이 적용하며 최대
 설정의 **창 배치 단축키 / Window shortcuts**를 펼치고 각 버튼을 눌러 조합을 녹화한 뒤
 **단축키 적용 / Apply Shortcuts**으로 다섯 동작을 함께 적용합니다. 정상 등록 상태에서는 이 항목을 접어 둡니다.
 조합에는 Command·Control·Option 중 하나 이상이 필요하며, 같은 조합을 여러 동작에 중복 지정할 수 없습니다.
-최대화 키는 지워서 미지정으로 둘 수 있으며, 메뉴·선택기 버튼으로 계속 사용할 수 있습니다.
+최대화도 방향키와 같은 방식으로 버튼을 눌러 조합을 변경합니다. 이전 설정이나 최초 이전 충돌로
+미지정 상태인 경우에도 메뉴·선택기 버튼으로 계속 사용할 수 있습니다.
 Esc는 녹화를 취소합니다. 두 동작의 키를 맞바꾸려면 두 draft를 모두 수정한 후 적용하면 됩니다.
 녹화 중에도 기존 등록은 유지되며, 등록된 키를 눌러도 창을 이동하지 않고 활성 draft만 변경합니다.
 

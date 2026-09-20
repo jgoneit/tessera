@@ -304,14 +304,6 @@ struct SettingsView: View {
                 bridge: coordinator.shortcutRecorder,
                 onRecord: { draftShortcuts.maximize = $0 })
                 .frame(width: 174, height: 30)
-            Button {
-                coordinator.shortcutRecorder.cancelRecording()
-                draftShortcuts.maximize = nil
-            } label: { Image(systemName: "xmark.circle") }
-                .buttonStyle(.plain)
-                .accessibilityLabel(t("Clear maximize shortcut"))
-                .help(t("Clear maximize shortcut"))
-                .disabled(draftShortcuts.maximize == nil)
         }
         .padding(.vertical, 9)
     }

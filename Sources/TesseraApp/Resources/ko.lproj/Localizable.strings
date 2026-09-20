@@ -188,7 +188,6 @@
 "Bottom half of screen" = "화면 아래쪽 절반";
 "Window shortcuts" = "창 배치 단축키";
 "Choose a different key for each action. Include ⌘, ⌃, or ⌥." = "각 동작에 서로 다른 키를 지정해 주세요. ⌘, ⌃ 또는 ⌥를 포함해야 합니다.";
-"Clear maximize shortcut" = "최대화 단축키 지우기";
 "Fill the usable display without gaps. Use arrows to return to the grid." = "사용 가능한 화면을 여백 없이 채웁니다. 방향키로 격자 배치로 돌아갈 수 있습니다.";
 "Window shortcuts applied." = "창 배치 단축키를 적용했습니다.";
 "Not assigned" = "지정되지 않음";
