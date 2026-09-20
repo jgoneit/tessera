@@ -498,3 +498,28 @@ state and continued top half→maximize→bottom half. The download button point
 no browser warning/error logs appeared during these checks. Alpha.1 and the currently installed app remain
 unchanged. Public-page verification does not establish installation/launch on another Mac or completion of
 multi-display runtime coverage.
+
+## Consistent Maximize shortcut row and alpha.3 build — 2026-09-20
+
+Removed the `×` clear button that appeared only beside Maximize, aligning all five shortcut fields
+at the same width. Click the Maximize field to change its key combination. Existing unassigned
+preferences and initial-registration conflict fallback remain supported. Shortcut registration,
+placement/AX logic, and the stored format are unchanged.
+
+- `TESSERA_UI_PREVIEW_DIR="$PWD/.build/alpha3-ui-previews" swift test`: all 150 tests in 12 suites passed,
+  including existing unassigned/conflict/restart/recording cases and bilingual string checks.
+- Generated 84 offscreen renders and inspected the four 640×1320 Settings images for Korean/English
+  and light/dark. All five fields align and Maximize has no clear button. This is separate from
+  directly interacting with the installed app.
+- All 49 web tests, syntax checks for `app.mjs`, `navigation.mjs`, and `i18n.mjs`, and `git diff --check` passed.
+- `build-app.sh` built version `0.1.0`, build `3`, for arm64 and verified its ad hoc signature.
+  `build-dmg.sh --skip-build` passed image verification. Read-only mounting confirmed the contained
+  app signature/version, Applications link, and Korean/English installation guide.
+- Built and mounted executable SHA-256:
+  `dce6b39f41b283f4696beedb76f1719907f71bf487740a87f987141bf9e1db67`.
+- DMG SHA-256: `57986ae493eb03c52c7e07056de97d8064871e6bf61d05c89cd695578d00f09c`.
+
+The existing checks were run directly because they exceed Seal's automatic-activation time limit.
+The installed app and its Accessibility permission were not changed. Installation/launch on another
+Mac, macOS 14 runtime, multi-display, and mixed-scale checks remain incomplete. Public asset download
+and Pages verification results are recorded separately in the alpha.3 release notes and PR.

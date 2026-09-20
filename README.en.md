@@ -11,11 +11,11 @@
 <p align="center">
   <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="Latest release, including prereleases" /></a>
   <a href="docs/INSTALL.en.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 or later" /></a>
-  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.3"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.2/Tessera-0.1.0-arm64.dmg"><strong>Download alpha.2 DMG</strong></a> ·
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.3/Tessera-0.1.0-arm64.dmg"><strong>Download alpha.3 DMG</strong></a> ·
   <a href="https://jgoneit.github.io/tessera/?lang=en#demo"><strong>Try it in your browser</strong></a> ·
   <a href="docs/INSTALL.en.md">Installation guide</a>
 </p>
@@ -108,7 +108,7 @@ Opening it alone does not move the window. The same window captured before the m
 | Layouts | One or more of 2×2, 3×2, 4×2 | 3×2 only |
 | Window spacing | 0, 4, 8, 12pt | 8pt |
 | Left / Right / Up / Down | A different key combination for each direction | Control+Option+each arrow key |
-| Maximize | A separate combination, or unassigned | Control+Option+Return |
+| Maximize | A separate key combination | Control+Option+Return |
 
 Zone numbering starts at the top left and proceeds left to right, then top to bottom.
 The gap applies equally between neighboring windows and along screen edges, except when maximized.
@@ -119,7 +119,8 @@ placement session; the next shortcut checks the current window again.
 Expand **Window shortcuts** in Settings, click each button to record a combination, then use **Apply Shortcuts**
 to apply all five actions together. This section remains collapsed when registration is working.
 Each combination requires at least one of Command, Control, or Option, and cannot be assigned to multiple actions.
-You can clear the maximize binding and continue using its menu item and picker button.
+Change the maximize combination by clicking its button, just like the direction shortcuts. If it is unassigned
+in existing settings or because of an initial migration conflict, its menu item and picker button remain available.
 Esc cancels recording. To swap two actions' keys, edit both drafts before applying them.
 Existing shortcuts stay registered during recording. Pressing a registered combination changes only the active
 draft instead of moving a window.

@@ -70,7 +70,7 @@ node --test website/*.test.mjs
 The [website validation record](../docs/landing-page-validation.en.md) documents the existing app's
 Seal checks and the scope of web verification. The [bilingual support validation record](../docs/bilingual-validation.en.md)
 separately records translation and language-switching verification for this change.
-Download links point to the verified `v0.1.0-alpha.2` release. When switching to a new release,
+Download links target version `v0.1.0-alpha.3`. When switching to a new release,
 update both download links and the installation guide link together.
 When changing `app.mjs`, also update the `v` in its script URL in `index.html` to the first 12 characters
 of the file's SHA-256. This prevents returning visitors from continuing to run an older cached script.
