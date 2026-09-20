@@ -1,6 +1,6 @@
 import { createState, maximize, move, selectZone, setLayouts, selectedZones, frame } from './navigation.mjs?v=bd4bcbeb0add';
 
-import { resolveLanguage, t, translateDocument } from './i18n.mjs?v=206e36eacc6e';
+import { resolveLanguage, t, translateDocument } from './i18n.mjs?v=2804556b5b89';
 
 const root = document.documentElement;
 const languageButton = document.querySelector('#languageToggleBtn');
@@ -144,25 +144,34 @@ function navigate(direction) {
   render();
 }
 
+function maximizeDemo() {
+  state = maximize(state);
+  render();
+}
+
+function focusAfterPlacementClick(event, button) {
+  // Pointer placement continues in the demo; Tab-selected buttons keep native activation.
+  (event.detail > 0 ? interaction : button).focus({ preventScroll: true });
+}
+
 layoutInputs.forEach(input => input.addEventListener('change', () => {
   const layouts = layoutInputs.filter(item => item.checked).map(item => Number(item.value));
   if (layouts.length) state = setLayouts(state, layouts, input.checked ? Number(input.value) : undefined);
   render();
   input.focus({ preventScroll: true });
 }));
-directionButtons.forEach(button => button.addEventListener('click', () => {
-  button.focus({ preventScroll: true });
+directionButtons.forEach(button => button.addEventListener('click', event => {
+  focusAfterPlacementClick(event, button);
   navigate(button.dataset.direction);
 }));
-maximizeButton.addEventListener('click', () => {
-  maximizeButton.focus({ preventScroll: true });
-  state = maximize(state);
-  render();
+maximizeButton.addEventListener('click', event => {
+  focusAfterPlacementClick(event, maximizeButton);
+  maximizeDemo();
 });
 cards.addEventListener('click', event => {
   const button = event.target.closest('[data-zone]');
   if (!button) return;
-  button.focus({ preventScroll: true });
+  focusAfterPlacementClick(event, button);
   state = selectZone(state, Number(button.dataset.zone));
   render();
 });
@@ -182,6 +191,7 @@ demo.addEventListener('keydown', event => {
   if (direction) {
     event.preventDefault();
     if (event.repeat && (direction === 'up' || direction === 'down')) return;
+    if (event.target.closest('button')) interaction.focus({ preventScroll: true });
     clearPressed();
     directionButtons.find(button => button.dataset.direction === direction).classList.add('is-pressed');
     navigate(direction);
@@ -189,8 +199,14 @@ demo.addEventListener('keydown', event => {
     const id = Number(event.code.slice(-1));
     if (id > state.columns * 2) return;
     event.preventDefault();
+    if (event.target.closest('button')) interaction.focus({ preventScroll: true });
     state = selectZone(state, id);
     render();
+  } else if (event.key === 'Enter' && (event.target === interaction || layoutInputs.includes(event.target))) {
+    event.preventDefault();
+    if (event.repeat) return;
+    clearPressed();
+    maximizeDemo();
   } else if (event.key === 'Escape') {
     document.activeElement?.blur();
     clearPressed();

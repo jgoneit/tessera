@@ -10,7 +10,7 @@
   <meta property="og:type" content="website" />
   <link rel="icon" href="./mark.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles.css?v=2c01c177cf0c" />
-  <script type="module" src="./app.mjs?v=8ac7027183b9"></script>
+  <script type="module" src="./app.mjs?v=45eb0640ba60"></script>
 </head>
 <body>
   <svg class="svg-definitions" aria-hidden="true"><defs>
@@ -63,7 +63,7 @@
             </fieldset>
             <span class="demo-note"><span data-i18n="demo.multiple">여러 개를 함께 골라도 좋아요</span></span>
           </div>
-          <div class="demo-interaction" tabindex="0" role="group" aria-label="방향키로 창 배치 체험" data-i18n-aria-label="demo.interaction" aria-describedby="demoKeyboardHelp">
+          <div class="demo-interaction" tabindex="0" role="group" aria-label="방향키로 창 배치 체험" data-i18n-aria-label="demo.interaction" aria-describedby="demoKeyboardHelp" aria-keyshortcuts="Enter">
             <div class="mock-desktop">
               <div class="windows-grid" id="desktopStage" aria-hidden="true">
                 <div class="layout-guides" id="layoutGuides"></div>
@@ -88,13 +88,13 @@
               </div>
               <div class="demo-instructions">
                 <p class="demo-instruction-title"><span data-i18n="demo.prompt">방향키를 눌러보세요</span></p>
-                <p id="demoKeyboardHelp"><span data-i18n="demo.help1">격자를 고른 뒤 바로 방향키로 움직여보세요.</span><br class="desktop-break" /> <span data-i18n="demo.help2">최대화 버튼을 누른 뒤 방향키로 다시 움직여보세요.</span></p>
+                <p id="demoKeyboardHelp"><span data-i18n="demo.help1">격자를 고른 뒤 바로 방향키로 움직여보세요.</span><br class="desktop-break" /> <span data-i18n="demo.help2">Return으로 최대화하고, 방향키로 계속 움직여보세요.</span></p>
                 <div class="arrow-controls" role="group" aria-label="이동 방향" data-i18n-aria-label="direction.label">
                   <button type="button" class="arrow-key" data-direction="left" aria-label="왼쪽으로 이동" data-i18n-aria-label="direction.left">←</button>
                   <button type="button" class="arrow-key" data-direction="up" aria-label="위로 한 단계 이동" data-i18n-aria-label="direction.up">↑</button>
                   <button type="button" class="arrow-key" data-direction="down" aria-label="아래로 한 단계 이동" data-i18n-aria-label="direction.down">↓</button>
                   <button type="button" class="arrow-key" data-direction="right" aria-label="오른쪽으로 이동" data-i18n-aria-label="direction.right">→</button>
-                  <button type="button" class="arrow-key maximize-key" id="maximizeBtn" aria-label="창 최대화" data-i18n-aria-label="action.maximizeLabel" aria-pressed="false"><span data-i18n="action.maximize">최대화</span></button>
+                  <button type="button" class="arrow-key maximize-key" id="maximizeBtn" aria-label="체험 창 최대화 (Return)" data-i18n-aria-label="action.maximizeLabel" aria-keyshortcuts="Enter" aria-pressed="false"><span data-i18n="action.maximize">최대화</span><span aria-hidden="true"> ↵</span></button>
                 </div>
                 <p class="height-guide"><span data-height="top"><span data-i18n="height.top">위칸</span></span><span aria-hidden="true">↔</span><span data-height="full" class="active"><span data-i18n="height.full">열 전체</span></span><span aria-hidden="true">↔</span><span data-height="bottom"><span data-i18n="height.bottom">아래칸</span></span></p>
               </div>
