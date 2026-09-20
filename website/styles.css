@@ -189,13 +189,15 @@
 
     .nav-actions {
       display: flex;
+      flex-shrink: 0;
       align-items: center;
       gap: 10px;
     }
 
-    .theme-toggle {
+    .theme-toggle, .github-link {
       width: 32px;
       height: 32px;
+      flex-shrink: 0;
       border-radius: 6px;
       display: flex;
       align-items: center;
@@ -206,7 +208,7 @@
       transition: all 0.15s ease;
     }
 
-    .theme-toggle:hover {
+    .theme-toggle:hover, .github-link:hover {
       color: var(--text-main);
       border-color: var(--border-strong);
     }
