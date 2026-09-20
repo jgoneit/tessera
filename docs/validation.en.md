@@ -528,5 +528,6 @@ and Pages verification results are recorded separately in the alpha.3 release no
 
 The [updater validation record](updater-validation.en.md) separately documents 170 automated tests,
 13 signature regression cases, real Sparkle local success/cancellation/tamper rejection, quiet scheduled checks,
-and preserved settings. Release/Pages publication, final installed-app checks, and Seal completion are pending
-at that recording point. Existing multi-display and other unverified requirements remain open; overall v0.1 is incomplete.
+and preserved settings. It also records pre-publication Seal Acceptance, the alpha.4 release and Pages deployment,
+public DMG re-download, and update-check/Accessibility-ready results in the installed app. The user's physical-shortcut
+placement check is pending. Existing multi-display and other unverified requirements remain open; overall v0.1 is incomplete.

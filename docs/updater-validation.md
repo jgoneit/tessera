@@ -3,8 +3,9 @@
 한국어 | [English](updater-validation.en.md)
 
 기록일: 2026-09-20. 대상은 `0.1.0-alpha.4` / 빌드 `4`, Sparkle `2.10.0`입니다.
-자동 검사, 오프스크린 렌더, 실제 로컬 업데이트 흐름을 아래처럼 구분합니다. 이 기록 시점에는
-공개 릴리스·Pages·최종 설치본 검증과 Seal 완료가 남아 있으며, 전체 v0.1 완료를 뜻하지 않습니다.
+자동 검사, 오프스크린 렌더, 실제 로컬 업데이트와 공개·설치 검증을 아래처럼 구분합니다.
+공개 릴리스·Pages와 설치본의 업데이트 확인·접근성 준비 상태까지 확인했습니다. 사용자의 실제
+방향키 배치 확인은 대기 중이며, 전체 v0.1 완료를 뜻하지 않습니다.
 
 ## 자동 검사와 렌더
 
@@ -44,7 +45,8 @@ loopback 피드를 통해 검증했습니다. 시험 앱의 Sparkle 설정은 �
 
 이 시험 중 원래 `/Applications/Tessera.app`의 alpha.3은 교체하지 않았습니다. 기존 실행 파일
 SHA-256 `dce6b39f41b283f4696beedb76f1719907f71bf487740a87f987141bf9e1db67`을 유지했습니다.
-시험 사본의 설치 성공을 최종 `/Applications` 설치·접근성 승인이나 다른 Mac의 설치 성공으로 확대하지 않습니다.
+이 시험 사본의 결과와 이후 최종 `/Applications` 설치 결과는 구분합니다. 최종 설치 결과는 아래에 기록했으며,
+다른 Mac의 설치 성공으로 확대하지 않습니다.
 
 ## 자동 확인·안내·설정 보존
 
@@ -60,15 +62,40 @@ SHA-256 `dce6b39f41b283f4696beedb76f1719907f71bf487740a87f987141bf9e1db67`을 �
   시스템 언어·테마, 기존 방향키와 사용자 최대화 조합 **Option+Command+Return**을 보존했습니다.
   이 비교는 JSON 객체 키 순서와 같은 표현 차이를 제외합니다.
 
-## 남은 공개·설치 검증
+## Seal과 공개 검증
 
-다음은 이 기록 작성 시 **미완료**이며 실제 결과를 확인한 뒤 별도로 추가합니다.
+- Seal Task `tessera-auto-update-alpha4-20260920`의 공개 전 Run
+  `842478435bcb494d89f30d5e791894ce`에서 `unit-tests`, `app-bundle`, `website-tests`,
+  `website-syntax` 네 필수 검사가 통과했고 해당 Run으로 Acceptance를 받았습니다.
+  공개 후 추가한 이 검증 기록의 재검사는 별도로 수행합니다.
+- [PR #8](https://github.com/jgoneit/tessera/pull/8)을 병합했습니다.
+  병합 커밋은 `35b0b2ab0ceae591dd0f61314fd202dca5f37eda`입니다.
+- [v0.1.0-alpha.4 사전 릴리스](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4)는
+  검증한 소스 커밋 `8cde98d29d35a39ce95e221e31130e06929eec0f`를 가리킵니다.
+  공개 DMG와 `SHA256SUMS`를 다시 내려받아 위 표의 DMG SHA-256과 일치함을 확인했습니다.
+- GitHub Pages [배포 Run 35489541006](https://github.com/jgoneit/tessera/actions/runs/35489541006)이 성공했습니다.
+  공개 HTTPS [appcast.xml](https://jgoneit.github.io/tessera/appcast.xml)을 내려받아 번들의 공개키로 서명을 검증했습니다.
+- 실제 브라우저의 [한국어](https://jgoneit.github.io/tessera/?lang=ko)와
+  [영어](https://jgoneit.github.io/tessera/?lang=en) 페이지에서 다운로드가 alpha.4 DMG를 가리키는 것을 확인했습니다.
+  alpha.1~alpha.3 릴리스와 자산은 보존했습니다.
 
-- Seal Task `tessera-auto-update-alpha4-20260920`의 최종 `verify`와 정확한 Run ID의 `complete`.
-- 목적별 커밋·푸시·PR 검사·병합과 alpha.4 공개 릴리스·DMG·체크섬 재다운로드 검증.
-- 공개 HTTPS `appcast.xml` 서명, 한영 페이지 다운로드 링크, 최종 설치본의 ‘최신 버전’ 확인.
-- 이전 설치 앱 백업 후 `/Applications/Tessera.app` 교체, 접근성 승인·다섯 단축키 등록·실제 창 이동.
-- 최종 설치 후 기존 설정 보존 확인과 로컬 시험 프로세스·피드·업데이터 설정 정리.
+## 공개 DMG의 로컬 설치
+
+- 기존 앱을 `~/Library/Application Support/Tessera/Backups/Tessera-before-alpha4-20260920.app`에 백업하고,
+  교체 전 원본도 별도로 보존했습니다. 공개 DMG의 앱을 `/Applications/Tessera.app`에 설치했습니다.
+- 설치 실행 파일 SHA-256은 위 표의 최종 `3499da2c3f96e3159cb6ae40d44f5e267a8164add0235e42550d1cdf049125c7`과 같습니다.
+  실제 설치본의 수동 업데이트 확인에서 `0.1.0-alpha.4`가 최신 버전임을 확인했으며 자동 확인은 켜져 있습니다.
+- 기존 Tessera 접근성 항목을 제거하고 정확한 설치 경로를 다시 추가했습니다. 이번 실행에서는 macOS 인증 창이
+  나타나지 않았고, Tessera 안에서 창을 배치할 준비 상태를 확인했습니다.
+- 설치본 실행(PID `70783`)에서 다섯 단축키 등록을 확인했습니다. 사용자 최대화 키 **Option+Command+Return**과
+  모든 `tessera.*` 설정의 의미 값이 교체 전후 동일하며, `SUFeedURL` 사용자 덮어쓰기는 없습니다.
+- 로컬 시험 서버 포트 `8769`–`8772`를 종료하고, 시험 전용 Sparkle 설정은 내보내기로 보관한 뒤 제거했습니다.
+  일반 사용자 설정은 유지했습니다.
+
+## 남은 실기 확인
+
+이 변경에서 남은 실기 확인은 최종 설치본에서 사용자가 물리 단축키로 창을 실제 배치하는 단계입니다.
+접근성 준비 표시와 단축키 등록만으로 실제 창 이동을 확인했다고 기록하지 않습니다.
 
 alpha.3 이하에는 업데이터가 없으므로 alpha.4를 한 번 직접 설치해야 합니다. ad hoc 서명 변경으로
 접근성 재승인이 필요할 수 있습니다. 다중 화면·혼합 배율·다른 Mac·macOS 14 실기와 전체 v0.1의

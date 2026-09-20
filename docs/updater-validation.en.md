@@ -3,9 +3,9 @@
 [한국어](updater-validation.md) | English
 
 Recorded on 2026-09-20 for `0.1.0-alpha.4` / build `4`, using Sparkle `2.10.0`.
-Automated checks, offscreen rendering, and real local update installation are distinguished below. At this
-recording point, release/Pages publication, final installed-app checks, and Seal completion remain pending.
-This is not a claim that overall v0.1 is complete.
+Automated checks, offscreen rendering, real local updates, and public/install verification are distinguished below.
+Release/Pages publication, update checking in the installed app, and Accessibility-ready status have been confirmed.
+The user's physical-shortcut placement check is pending; this is not a claim that overall v0.1 is complete.
 
 ## Automated checks and rendering
 
@@ -46,8 +46,8 @@ The successful update and relaunch test was repeated with this final DMG. The ex
 
 The original alpha.3 at `/Applications/Tessera.app` was not replaced during these tests. Its executable retained
 SHA-256 `dce6b39f41b283f4696beedb76f1719907f71bf487740a87f987141bf9e1db67`.
-Successful installation into the test copy does not establish final `/Applications` installation, Accessibility
-approval, or successful installation on another Mac.
+Results from this test copy remain distinct from the later final `/Applications` installation recorded below.
+They do not establish successful installation on another Mac.
 
 ## Scheduled checks, presentation, and preserved settings
 
@@ -63,15 +63,42 @@ approval, or successful installation on another Mac.
   and theme, existing directional bindings, and customized **Option+Command+Return** for Maximize were preserved.
   The comparison ignores representation differences such as JSON object key order.
 
-## Pending publication and installation checks
+## Seal and public verification
 
-The following are **pending** at this recording point; actual results will be added separately:
+- Pre-publication Run `842478435bcb494d89f30d5e791894ce` for Seal Task
+  `tessera-auto-update-alpha4-20260920` passed all four required checks: `unit-tests`, `app-bundle`,
+  `website-tests`, and `website-syntax`. Acceptance used that Run. Reverification of this later public-validation
+  record is handled separately.
+- [PR #8](https://github.com/jgoneit/tessera/pull/8) was merged as commit
+  `35b0b2ab0ceae591dd0f61314fd202dca5f37eda`.
+- The [v0.1.0-alpha.4 prerelease](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4) points to verified
+  source commit `8cde98d29d35a39ce95e221e31130e06929eec0f`. The public DMG and `SHA256SUMS` were downloaded again,
+  confirming the DMG SHA-256 matches the table above.
+- GitHub Pages [deployment Run 35489541006](https://github.com/jgoneit/tessera/actions/runs/35489541006) succeeded.
+  The public HTTPS [appcast.xml](https://jgoneit.github.io/tessera/appcast.xml) was downloaded and its signature
+  verified using the bundle's public key.
+- Browser checks of the [Korean](https://jgoneit.github.io/tessera/?lang=ko) and
+  [English](https://jgoneit.github.io/tessera/?lang=en) pages confirmed that download links target the alpha.4 DMG.
+  Releases and assets for alpha.1 through alpha.3 were preserved.
 
-- Final `verify` and `complete` with the exact returned Run ID for Seal Task `tessera-auto-update-alpha4-20260920`.
-- Purpose-specific commits, push, PR checks and merge, alpha.4 release publication, and public DMG/checksum re-download verification.
-- Public HTTPS `appcast.xml` signature, Korean/English download links, and an up-to-date check in the final installed app.
-- Backup and replacement of `/Applications/Tessera.app`, Accessibility approval, registration of all five shortcuts, and actual window placement.
-- Settings preservation after final installation and cleanup of local test processes, feeds, and updater preferences.
+## Local installation from the public DMG
+
+- Backed up the existing app to `~/Library/Application Support/Tessera/Backups/Tessera-before-alpha4-20260920.app`
+  and separately preserved the original being replaced. Installed the app from the public DMG at `/Applications/Tessera.app`.
+- The installed executable matches the final SHA-256 above:
+  `3499da2c3f96e3159cb6ae40d44f5e267a8164add0235e42550d1cdf049125c7`.
+  A real manual update check in this installation reported `0.1.0-alpha.4` as up to date. Automatic checking is enabled.
+- Removed the previous Tessera Accessibility entry and re-added the exact installed path. No macOS authentication
+  prompt appeared in this run; the app itself reported ready to arrange windows.
+- Confirmed all five shortcuts registered in the installed process (PID `70783`). The custom **Option+Command+Return**
+  Maximize binding and all semantic `tessera.*` settings were unchanged, with no user `SUFeedURL` override.
+- Stopped local test servers on ports `8769`–`8772` and removed isolated trial Sparkle domains after exporting backups.
+  Ordinary user settings were preserved.
+
+## Remaining runtime check
+
+The remaining runtime check for this change is the user's physical-shortcut window placement in the final installation.
+Accessibility-ready status and registered shortcuts alone are not recorded as proof of actual window movement.
 
 alpha.3 and earlier have no updater and require one manual alpha.4 installation. An ad hoc signature change may
 require renewed Accessibility approval. Multi-display, mixed-scale, other-Mac, macOS 14 runtime, and the existing
