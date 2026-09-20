@@ -1,6 +1,5 @@
 // Tessera user-facing strings. English source text is the stable key.
 "Tessera" = "Tessera";
-"v0.1" = "v0.1";
 "System" = "System";
 "English" = "English";
 "Korean" = "Korean";
@@ -194,3 +193,14 @@
 "Record a window shortcut, then use Apply Shortcuts to save all five." = "Record a window shortcut, then use Apply Shortcuts to save all five.";
 "Maximize shortcut was not assigned because a direction already uses it. Your direction shortcuts are unchanged." = "Maximize shortcut was not assigned because a direction already uses it. Your direction shortcuts are unchanged.";
 "Maximize shortcut was not assigned. Your direction shortcuts are unchanged. %@" = "Maximize shortcut was not assigned. Your direction shortcuts are unchanged. %@";
+"Updates" = "Updates";
+"Automatically check for updates" = "Automatically check for updates";
+"Checks once a day. Updates install only when you choose." = "Checks once a day. Updates install only when you choose.";
+"Last checked: %@" = "Last checked: %@";
+"Update Available…" = "Update Available…";
+"Check for Updates…" = "Check for Updates…";
+"Check for a newer version of Tessera." = "Check for a newer version of Tessera.";
+"Checking for updates…" = "Checking for updates…";
+"Version %@ is available." = "Version %@ is available.";
+"You're up to date." = "You're up to date.";
+"Could not check for updates. Try again later." = "Could not check for updates. Try again later.";

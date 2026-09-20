@@ -67,8 +67,11 @@ node --test website/*.test.mjs
 
 기존 앱의 Seal 검사와 웹 검증 범위는 [소개페이지 검증 기록](../docs/landing-page-validation.md)에,
 이번 번역·언어 전환 검증은 [영문 지원 검증 기록](../docs/bilingual-validation.md)에 별도로 기록한다.
-다운로드 링크의 대상 버전은 `v0.1.0-alpha.3`이다. 새 릴리스로 바꿀 때는
-두 다운로드 링크와 설치 안내 링크를 함께 갱신한다.
+다운로드 링크의 대상 버전은 `v0.1.0-alpha.4`이다. 새 릴리스로 바꿀 때는
+두 다운로드 링크와 설치 안내 링크를 함께 갱신한다. alpha.4의 다운로드 파일은
+`Tessera-0.1.0-alpha.4-arm64.dmg`이며 앱 업데이트에도 같은 파일을 사용한다.
+alpha.3 이하 사용자는 alpha.4를 한 번 직접 설치해야 한다. 앱의 자동 확인·설치 동작은
+[설치 안내](../docs/INSTALL.md#업데이트하기)를 참고한다.
 `app.mjs` 변경 시 `index.html`의 script URL에 있는 `v`도 파일의 SHA-256 앞 12자리로
 갱신한다. 기존 방문자가 캐시된 이전 스크립트를 계속 실행하는 것을 막기 위한 값이다.
 `navigation.mjs` 또는 `i18n.mjs`를 변경하면 해당 import URL의 버전을 갱신한 뒤
@@ -81,9 +84,15 @@ app 버전을 갱신한다. `styles.css`도 HTML의 stylesheet URL에 같은 방
 구문 검사를 통과한 파일만 GitHub Pages로 배포한다. PR에서는 준비/검사만 수행한다.
 Actions 화면에서 수동 실행할 수도 있다.
 
-공개 파일은 `index.html`, `styles.css`, `app.mjs`, `navigation.mjs`, `i18n.mjs`, `mark.svg`와
-워크플로가 생성하는 `.nojekyll`이다. 테스트·문서·네이티브 앱 파일은 웹 경로에
+공개 파일은 `index.html`, `styles.css`, `app.mjs`, `navigation.mjs`, `i18n.mjs`, `mark.svg`,
+서명된 `appcast.xml`과 워크플로가 생성하는 `.nojekyll`이다. 테스트·문서·네이티브 앱 파일은 웹 경로에
 배포하지 않는다. 저장소 Pages 설정의 Source는 **GitHub Actions**를 사용한다.
+
+`appcast.xml`은 `https://jgoneit.github.io/tessera/appcast.xml`의 고정 주소로 제공한다.
+Sparkle 배포 도구가 한영 변경 안내와 DMG 서명을 담은 목록을 만들고 목록 자체도 서명한다.
+최종 서명 후 내용을 직접 편집하지 않으며, 기존 로그인 키체인의 업데이트 키로 다시 생성한다.
+개인키는 웹 파일이나 저장소에 포함하지 않는다. 먼저 GitHub Releases에 실제 DMG를 공개·확인하고
+그다음 새 다운로드 링크와 목록을 Pages에 배포한다. 잘못된 업데이트를 철회할 때도 목록을 다시 서명한다.
 
 파일 참조는 상대 경로이므로 `/tessera/` 경로와 독립 도메인의 루트 모두 지원한다.
 별도 도메인을 연결할 때는 GitHub Pages의 **Custom domain** 설정과 해당 도메인의

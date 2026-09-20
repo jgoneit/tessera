@@ -11,11 +11,11 @@
 <p align="center">
   <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="Latest release, including prereleases" /></a>
   <a href="docs/INSTALL.en.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 or later" /></a>
-  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.3"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.3/Tessera-0.1.0-arm64.dmg"><strong>Download alpha.3 DMG</strong></a> ·
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.4/Tessera-0.1.0-alpha.4-arm64.dmg"><strong>Download alpha.4 DMG</strong></a> ·
   <a href="https://jgoneit.github.io/tessera/?lang=en#demo"><strong>Try it in your browser</strong></a> ·
   <a href="docs/INSTALL.en.md">Installation guide</a>
 </p>
@@ -109,6 +109,7 @@ Opening it alone does not move the window. The same window captured before the m
 | Window spacing | 0, 4, 8, 12pt | 8pt |
 | Left / Right / Up / Down | A different key combination for each direction | Control+Option+each arrow key |
 | Maximize | A separate key combination | Control+Option+Return |
+| Automatically check for updates | On / Off | On, once a day |
 
 Zone numbering starts at the top left and proceeds left to right, then top to bottom.
 The gap applies equally between neighboring windows and along screen edges, except when maximized.
@@ -139,6 +140,23 @@ A previous single layout setting migrates to a selection containing that grid al
 in 2×2, 3×2, 4×2 order, with duplicates removed. An empty list, invalid format, or unsupported grid name resets the
 selection to 3×2 only.
 
+## Updates
+
+The current release is **0.1.0-alpha.4**. Settings displays the full release version.
+Choose **Check for Updates…** in the menu or Settings to check for a new version.
+
+- Automatic checking is on by default and runs once a day. You can turn it off in Settings and still check manually.
+- A background check shows **New version available** in the menu and Settings without opening a window or taking focus.
+- Open that notice to read the version and changes. Choosing **Install** downloads and verifies the update, replaces the app,
+  and relaunches it. Downloads and installation require your action. Checking, up-to-date, and failed checks have distinct states;
+  network errors do not interrupt window placement.
+- Alpha releases check for both alpha and stable updates. Your grids, spacing, language, theme, and shortcuts are preserved.
+- **alpha.3 and earlier have no updater. Install the alpha.4 DMG manually once to receive later updates inside the app.**
+
+Tessera's update information follows your app language; Sparkle's standard installation dialogs use macOS's preferred language.
+Updating an ad hoc app may require renewing Accessibility permission. See the
+[installation guide](docs/INSTALL.en.md#update-tessera) for details.
+
 ## Language and theme
 
 Change the language and theme under **Appearance** in Settings. Changes take effect without restarting the app and
@@ -163,7 +181,8 @@ TESSERA_UI_PREVIEW_DIR="$PWD/.build/ui-previews" swift test
 
 ## Build and run
 
-Built with SwiftUI, AppKit, and the Accessibility API, with no external packages.
+Built with SwiftUI, AppKit, and the Accessibility API. The only external package is
+[Sparkle 2.10.0](https://sparkle-project.org/) for updates, pinned to that exact version in SwiftPM.
 Requires macOS 14 or later, Swift 6 or later, and the macOS SDK. Builds target the current Mac's architecture.
 
 ```sh
@@ -177,9 +196,9 @@ open dist/Tessera.app
 For everyday use, copy the built `Tessera.app` to `/Applications` and launch it from there.
 Installing on the same Mac does not require a public website or Apple Developer Program membership.
 Do not run both the development copy in `dist` and the installed copy at the same time.
-Tessera lives in the menu bar. Opening Settings makes its window and icon available in Mission Control,
+Tessera lives in the menu bar. Opening Settings or an update window makes its window and icon available in Mission Control,
 the Dock, and ⌘Tab. They remain available while Settings is minimized or behind another app.
-Closing Settings returns Tessera to menu-bar-only mode.
+Tessera returns to menu-bar-only mode when both Settings and the update window are closed.
 
 ```sh
 bash scripts/build-dmg.sh
@@ -189,6 +208,7 @@ This creates a DMG in `dist` with the version and architecture in its filename. 
 from the DMG to Applications. To package an already verified app without rebuilding it, use
 `bash scripts/build-dmg.sh --skip-build`. See the [installation guide](docs/INSTALL.en.md) for installation,
 updates, and Accessibility permission.
+See the [release operations guide](docs/RELEASING.en.md) for signing, update testing, and publication order.
 
 The current app uses local ad hoc signing and is not notarized by Apple. A DMG is an installation container;
 it does not replace Developer ID signing or notarization. macOS may block an app downloaded from the internet
@@ -201,9 +221,9 @@ build is not labeled as an Intel or universal app. Creating a DMG does not uploa
 
 ## App bundle
 
-The build script packages the release executable, Info.plist, and app icon into `dist/Tessera.app`,
-then applies a local ad hoc signature and validates the bundle. No Xcode project generation or additional
-package installation is required.
+The build script packages the release executable, Info.plist, app icon, and Sparkle framework and helpers into
+`dist/Tessera.app`, then applies local ad hoc signatures from the nested components outward and validates the bundle.
+SwiftPM downloads the pinned Sparkle dependency, so the first build needs a network connection. No separate Xcode project is required.
 The app lives in the menu bar as a single monochrome three-pane icon, without an app name next to it.
 Its template image adapts to the menu bar background and selection state. A tooltip and accessible name remain available.
 The app and Settings use the supplied color artwork, with standard macOS icon sizes generated at build time.

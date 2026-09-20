@@ -25,7 +25,8 @@ struct PresentationRenderTests {
             for theme in [AppTheme.light, .dark] {
                 preferences.theme = theme
                 let scheme: ColorScheme = theme == .dark ? .dark : .light
-                let content = SettingsView(coordinator: coordinator, preferences: preferences)
+                let content = SettingsView(coordinator: coordinator, preferences: preferences,
+                    version: AppVersion(baseVersion: "0.1.0", build: "4", fullVersion: "0.1.0-alpha.4"))
                     .environment(\.colorScheme, scheme)
                     .environment(\.locale, Locale(identifier: language.rawValue))
                 try render(content, size: CGSize(width: 680, height: 1320), theme: theme,
@@ -38,6 +39,42 @@ struct PresentationRenderTests {
                 }
                 try render(content, size: CGSize(width: 640, height: 1320), theme: theme, highContrast: true,
                     to: directory.appendingPathComponent("settings-high-contrast-\(language.rawValue)-\(theme.rawValue).png"))
+            }
+        }
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TESSERA_UI_PREVIEW_DIR"] != nil))
+    func updateStatesWithLongReleaseLabels() throws {
+        let directory = URL(fileURLWithPath: try #require(
+            ProcessInfo.processInfo.environment["TESSERA_UI_PREVIEW_DIR"]), isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        for language in [AppLanguage.en, .ko] {
+            let suite = "Tessera.updates.render.\(UUID().uuidString)"
+            let defaults = try #require(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            let preferences = Preferences(defaults: defaults)
+            preferences.language = language
+            let backend = RenderUpdateBackend()
+            let updates = UpdateService(backend: backend)
+            updates.start()
+            let coordinator = AppCoordinator(preferences: preferences, updates: updates)
+            for theme in [AppTheme.light, .dark] {
+                preferences.theme = theme
+                for (name, event) in [("available", UpdateBackendEvent.available("0.1.0-alpha.100")),
+                    ("checking", .checking), ("latest", .upToDate), ("offline", .failed("offline"))] {
+                    backend.onEvent?(event)
+                    let content = SettingsView(coordinator: coordinator, preferences: preferences,
+                        version: AppVersion(baseVersion: "0.1.0", build: "100", fullVersion: "0.1.0-alpha.100"))
+                        .environment(\.colorScheme, theme == .dark ? .dark : .light)
+                        .environment(\.locale, Locale(identifier: language.rawValue))
+                    for size in [CGSize(width: 680, height: 800), CGSize(width: 640, height: 620),
+                                 CGSize(width: 640, height: 1680)] {
+                        try render(content, size: size, theme: theme,
+                            to: directory.appendingPathComponent(
+                                "updates-\(name)-\(Int(size.width))x\(Int(size.height))-\(language.rawValue)-\(theme.rawValue).png"))
+                    }
+                }
             }
         }
     }
@@ -153,4 +190,14 @@ struct PresentationRenderTests {
         window.contentView = nil
         window.close()
     }
+}
+
+@MainActor
+private final class RenderUpdateBackend: UpdateBackend {
+    var onEvent: ((UpdateBackendEvent) -> Void)?
+    var canCheck = true
+    var automaticChecksEnabled = true
+    var lastCheckDate: Date? { Date(timeIntervalSince1970: 1_789_891_200) }
+    func start() throws {}
+    func checkForUpdates() {}
 }

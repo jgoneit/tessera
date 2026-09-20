@@ -12,6 +12,10 @@ Requires macOS 14 or later. The default build targets **only the architecture of
 it does not produce a universal app or cross-compile. For example, an `arm64` app built on Apple Silicon has not thereby
 been verified to run on Intel Macs.
 
+The current release is **0.1.0-alpha.4**. Download
+[`Tessera-0.1.0-alpha.4-arm64.dmg`](https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.4/Tessera-0.1.0-alpha.4-arm64.dmg)
+for Apple Silicon. **If you use alpha.3 or earlier, install this DMG manually once to enable future updates inside the app.**
+
 ## Install the app directly
 
 1. To build from source, install Swift 6 or later and the macOS SDK, then run this command from the repository root:
@@ -27,9 +31,9 @@ been verified to run on Intel Macs.
 4. Launch `Tessera.app` from the location you copied it to. Use this installed copy from now on.
 
 Tessera is a **menu bar app**. Click the three-pane icon on the right side of the menu bar to access Settings,
-window placement, and Quit. Opening Settings shows its window in Mission Control and its app icon in the Dock and ⌘Tab.
-The app icon remains when Settings is minimized or behind another app. Closing Settings returns Tessera to menu bar-only
-mode while the app keeps running. Showing only the picker or placement feedback does not add a Dock icon.
+window placement, and Quit. Opening Settings or an update window shows its window in Mission Control and its app icon in the Dock and ⌘Tab.
+The app icon remains when Settings is minimized or behind another app. Closing both Settings and the update window returns Tessera
+to menu bar-only mode while the app keeps running. Showing only the picker or placement feedback does not add a Dock icon.
 
 ## Install from a DMG
 
@@ -42,6 +46,25 @@ mode while the app keeps running. Showing only the picker or placement feedback 
 The DMG contains `Tessera.app`, a link to `/Applications`, and a Korean/English `INSTALL.txt`.
 It does not install automatically or change permissions.
 
+## Update Tessera
+
+Starting with alpha.4, use **Check for Updates…** in the menu or Settings.
+Settings shows the installed full release version, such as `0.1.0-alpha.4`.
+
+1. Choose **Check for Updates…**. Checking, up-to-date, and failed checks have distinct states.
+2. If a new version is available, read the version and changes, then choose **Install**.
+3. Tessera downloads the update, verifies its signature, replaces the app, and relaunches it. Your grids, spacing, language, theme, and shortcuts are preserved.
+4. If window placement needs permission again, follow the Accessibility steps below.
+
+Automatic checking is **on by default, once a day**, and can be disabled in Settings. Manual checks remain available.
+Background checks show **New version available** in the menu and Settings without opening a window or taking focus.
+Tessera does not automatically download or install updates before you choose to install. Failed checks leave your installed app
+and window placement available. Alpha apps check for alpha and stable releases; stable apps check for stable releases only.
+Tessera's status messages follow your selected Korean/English app language; Sparkle's standard installation dialogs use macOS's preferred language.
+
+alpha.3 and earlier have no updater, so install the new DMG manually once. Manual replacement from a DMG remains available later.
+Do not run a development copy and the installed app at the same time.
+
 ## Check permission to move windows
 
 1. Click **Open Settings** in Tessera Settings.
@@ -50,7 +73,7 @@ It does not install automatically or change permissions.
 3. Click the refresh button (**Check Again**) in Tessera Settings to confirm it is ready.
 4. Activate a regular window in another app and use your existing direction shortcuts to place it.
 
-Moving the app from a development folder to Applications or rebuilding an ad hoc app may require checking Accessibility
+Moving the app from a development folder to Applications or rebuilding/updating an ad hoc app may require checking Accessibility
 permission again. If System Settings shows permission enabled but Tessera still requests access, remove only the old Tessera
 entry, add the **currently installed app** again, and restart Tessera to check. Leave other apps' permissions unchanged.
 Grids, spacing, language, theme, and shortcuts use the existing settings for the same user account.
@@ -80,8 +103,8 @@ To package an already verified `dist/Tessera.app` without rebuilding or signing 
 bash scripts/build-dmg.sh --skip-build
 ```
 
-The filename comes from the app bundle's version and the executable's actual architecture.
-For example, version 0.1.0 with an arm64 executable produces `dist/Tessera-0.1.0-arm64.dmg`.
+The filename comes from the app bundle's full release version and the executable's actual architecture.
+For example, release 0.1.0-alpha.4 with an arm64 executable produces `dist/Tessera-0.1.0-alpha.4-arm64.dmg`.
 The script checks the app's code signature and repeats the check on the bundle copied to a temporary folder.
 It creates a UDZO compressed image with `hdiutil create`, checks the image checksum with `hdiutil verify`,
 then places it at the final path. An existing DMG with the same name is replaced only after the new image passes verification.
@@ -89,6 +112,11 @@ Temporary files are cleaned up on failure or interruption.
 
 These checks do not prove actual window movement, Accessibility approval, Gatekeeper approval, or successful notarization.
 Mounting the image, installing the app, and launching it are separate steps that the script does not perform automatically.
+
+Publishing updates requires a Sparkle Ed25519 signature in addition to the app's code signature. The same DMG serves
+both direct downloads and app updates on GitHub Releases. The signed update feed is published at
+`https://jgoneit.github.io/tessera/appcast.xml` on GitHub Pages. The update private key stays in the local login keychain,
+never in the repository or release. Creating a local DMG does not publish an update feed or notify existing users.
 
 ## Signing and distribution scope
 
@@ -104,8 +132,10 @@ notarization when preparing a general release.
 - Requires macOS 14 or later. The default build targets the current Mac's architecture only.
 - Quit the running Tessera, keep any older app you need, and copy `Tessera.app` to Applications.
   For a DMG, drag the app onto its Applications link, eject the disk, and open the installed copy.
-- Tessera lives in the menu bar. Opening Settings shows its window in Mission Control and its icon in the Dock and ⌘Tab.
-  The app icon remains while Settings is minimized or behind another app; closing Settings returns to menu bar-only mode.
+- Tessera lives in the menu bar. Opening Settings or an update window shows its window in Mission Control and its icon in the Dock and ⌘Tab.
+  The app icon remains while Settings is minimized or behind another app; closing both windows returns to menu bar-only mode.
+- From alpha.4, use **Check for Updates…** in the menu or Settings. Automatic checks run quietly once a day by default; installation requires your action.
+  alpha.3 and earlier need one manual DMG installation first. Updating may require renewing Accessibility permission.
 - Allow the installed app in **System Settings → Privacy & Security → Accessibility**, then use **Check Again** in Tessera Settings.
 - Use **⌃⌥Return** to maximize, then **⌃⌥↑ / ⌃⌥↓** for screen halves or **⌃⌥← / ⌃⌥→** to enter a selected grid.
 - Run `bash scripts/build-dmg.sh` to build and package, or add `--skip-build` to package an existing verified bundle.

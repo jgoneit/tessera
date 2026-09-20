@@ -523,3 +523,10 @@ The existing checks were run directly because they exceed Seal's automatic-activ
 The installed app and its Accessibility permission were not changed. Installation/launch on another
 Mac, macOS 14 runtime, multi-display, and mixed-scale checks remain incomplete. Public asset download
 and Pages verification results are recorded separately in the alpha.3 release notes and PR.
+
+## Automatic updates and alpha.4 — 2026-09-20
+
+The [updater validation record](updater-validation.en.md) separately documents 170 automated tests,
+13 signature regression cases, real Sparkle local success/cancellation/tamper rejection, quiet scheduled checks,
+and preserved settings. Release/Pages publication, final installed-app checks, and Seal completion are pending
+at that recording point. Existing multi-display and other unverified requirements remain open; overall v0.1 is incomplete.

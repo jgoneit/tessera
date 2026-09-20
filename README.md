@@ -11,11 +11,11 @@
 <p align="center">
   <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="최신 릴리스 (사전 릴리스 포함)" /></a>
   <a href="docs/INSTALL.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 이상" /></a>
-  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.3"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.3/Tessera-0.1.0-arm64.dmg"><strong>alpha.3 DMG 다운로드</strong></a> ·
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.4/Tessera-0.1.0-alpha.4-arm64.dmg"><strong>alpha.4 DMG 다운로드</strong></a> ·
   <a href="https://jgoneit.github.io/tessera/?lang=ko#demo"><strong>웹에서 직접 체험</strong></a> ·
   <a href="docs/INSTALL.md">설치 안내</a>
 </p>
@@ -103,6 +103,7 @@
 | 창 간격 / Window spacing | 0, 4, 8, 12pt | 8pt |
 | Left / Right / Up / Down | 방향마다 서로 다른 키 조합 | Control+Option+각 방향키 |
 | 최대화 / Maximize | 별도 키 조합 | Control+Option+Return |
+| 업데이트 자동 확인 | 켜짐 / 꺼짐 | 켜짐, 하루 한 번 |
 
 Zone 번호는 좌상단에서 시작해 왼쪽에서 오른쪽, 위에서 아래 순서입니다.
 Gap은 인접 창 사이와 화면 가장자리에 똑같이 적용하며 최대화에서는 생략합니다.
@@ -130,6 +131,22 @@ Esc는 녹화를 취소합니다. 두 동작의 키를 맞바꾸려면 두 draft
 기존 단일 Layout 설정은 같은 격자 하나가 선택된 상태로 이전합니다. 새 선택 목록은 2×2·3×2·4×2 순서로
 저장하며 중복은 제거합니다. 새 목록이 비어 있거나 형식·격자 이름이 잘못되면 3×2만 선택한 상태로 복구합니다.
 
+## 업데이트
+
+현재 릴리스는 **0.1.0-alpha.4**입니다. 앱 설정에도 전체 릴리스 버전을 표시합니다.
+메뉴나 설정에서 **업데이트 확인 / Check for Updates…**를 눌러 새 버전을 확인할 수 있습니다.
+
+- 자동 확인은 기본으로 켜져 있으며 하루 한 번 확인합니다. 설정에서 끌 수 있고 수동 확인은 계속 사용할 수 있습니다.
+- 자동 확인으로 새 버전을 찾으면 메뉴와 설정에 **새 버전 있음**을 표시합니다. 작업 중 창을 열거나 포커스를 가져오지 않습니다.
+- 안내를 눌러 버전과 변경 내용을 확인하고 **설치**를 선택하면 다운로드·검증·앱 교체·재실행을 진행합니다.
+  자동 다운로드나 무인 설치는 하지 않습니다. 확인 중·최신 버전·확인 실패를 구분하며, 네트워크 오류가 창 배치를 중단하지 않습니다.
+- 알파 버전은 알파와 정식 업데이트를 확인합니다. 격자·간격·언어·테마·단축키 설정은 유지됩니다.
+- **alpha.3 이하에는 업데이터가 없습니다. alpha.4 DMG를 한 번 직접 설치한 뒤부터 앱 안에서 업데이트할 수 있습니다.**
+
+업데이트 안내는 Tessera의 선택 언어를 따르며, Sparkle 기본 설치 창은 macOS의 선호 언어를 사용합니다.
+ad hoc 서명 앱은 업데이트 후 손쉬운 사용 권한을 다시 허용해야 할 수 있습니다.
+자세한 방법은 [설치 안내](docs/INSTALL.md#업데이트하기)를 참고하세요.
+
 ## 언어와 테마
 
 설정의 **화면 표시 / Appearance**에서 언어와 테마를 변경합니다. 앱을 다시 열지 않아도 반영되며,
@@ -153,7 +170,8 @@ TESSERA_UI_PREVIEW_DIR="$PWD/.build/ui-previews" swift test
 
 ## 빌드와 실행
 
-SwiftUI·AppKit·Accessibility API로 구현했으며 외부 패키지를 사용하지 않습니다.
+SwiftUI·AppKit·Accessibility API로 구현했습니다. 유일한 외부 패키지는 업데이트를 위한
+[Sparkle 2.10.0](https://sparkle-project.org/)이며 SwiftPM에 정확한 버전을 고정합니다.
 macOS 14 이상, Swift 6 이상과 macOS SDK가 필요합니다. 현재 Mac의 아키텍처로 빌드합니다.
 
 ```sh
@@ -167,8 +185,8 @@ open dist/Tessera.app
 일상적으로 사용할 때는 빌드한 `Tessera.app`을 `/Applications`(응용 프로그램)에 복사하고
 그 위치에서 실행합니다. 같은 Mac에 설치하는 데 웹 공개나 Apple Developer Program 가입은 필요하지 않습니다.
 개발용 `dist` 경로의 앱과 설치한 앱을 동시에 실행하지 마세요. 앱은 메뉴바에 상주합니다.
-설정 창을 열면 Mission Control·Dock·⌘Tab에서 Tessera를 찾을 수 있습니다. 설정 창을 최소화하거나
-다른 앱 뒤에 두어도 표시를 유지하며, 설정 창을 닫으면 메뉴바 전용으로 돌아갑니다.
+설정 창이나 업데이트 창을 열면 Mission Control·Dock·⌘Tab에서 Tessera를 찾을 수 있습니다. 설정 창을 최소화하거나
+다른 앱 뒤에 두어도 표시를 유지하며, 설정 창과 업데이트 창을 모두 닫으면 메뉴바 전용으로 돌아갑니다.
 
 ```sh
 bash scripts/build-dmg.sh
@@ -177,6 +195,7 @@ bash scripts/build-dmg.sh
 `dist`에 버전·아키텍처가 표시된 DMG를 생성합니다. DMG 안의 Tessera를 Applications로 드래그해 설치합니다.
 이미 검증한 앱을 다시 빌드하지 않고 포장하려면 `bash scripts/build-dmg.sh --skip-build`를 사용합니다.
 설치·업데이트·손쉬운 사용 권한 안내는 [설치 안내](docs/INSTALL.md)를 참고하세요.
+릴리스 서명·업데이트 시험·공개 순서는 [릴리스 운영 안내](docs/RELEASING.md)에 정리했습니다.
 
 현재 앱은 로컬 ad hoc 서명이며 Apple 공증을 받지 않았습니다. DMG는 설치용 포장으로,
 Developer ID 서명·공증을 대신하지 않습니다. 인터넷에서 내려받은 앱은 macOS의 확인 경고로 실행이 차단될 수 있습니다.
@@ -189,8 +208,9 @@ Intel Mac용 또는 universal 앱으로 표시하지 않습니다. DMG 생성은
 
 ## 앱 번들
 
-빌드 스크립트는 release 실행 파일·Info.plist·앱 아이콘을 `dist/Tessera.app`에 묶고,
-로컬 ad hoc 서명과 번들 검증을 수행합니다. Xcode 프로젝트 생성이나 별도 패키지 설치는 필요하지 않습니다.
+빌드 스크립트는 release 실행 파일·Info.plist·앱 아이콘과 Sparkle 프레임워크·도우미를 `dist/Tessera.app`에 묶고,
+내부 구성요소부터 로컬 ad hoc 서명과 번들 검증을 수행합니다. SwiftPM이 고정한 Sparkle을 내려받으므로
+첫 빌드에는 네트워크 연결이 필요합니다. Xcode 프로젝트를 따로 생성할 필요는 없습니다.
 앱은 메뉴바의 단색 세 칸 아이콘 하나로 상주합니다. 앱 이름은 표시하지 않으며,
 template 이미지가 메뉴바 배경과 선택 상태에 맞춰 표시됩니다. 툴팁과 접근성 이름은 유지합니다.
 앱·설정 화면은 제공된 컬러 원본 이미지를 사용하며, 빌드 시 표준 macOS 아이콘 크기를 생성합니다.
