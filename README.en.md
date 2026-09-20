@@ -1,64 +1,37 @@
-# Tessera
+<p align="center">
+  <a href="https://jgoneit.github.io/tessera/?lang=en">
+    <img src="Resources/AppIcon.png" width="112" height="112" alt="Tessera app icon" />
+  </a>
+</p>
 
-[한국어](README.md) | [English](README.en.md)
+<h1 align="center">Tessera</h1>
 
-[Website](https://jgoneit.github.io/tessera/?lang=en)
+<p align="center"><strong>Multiple grids. One set of arrow shortcuts.</strong><br />A menu bar window manager for macOS</p>
 
-[Download alpha.2 for Apple Silicon](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2)
-— Try the matching maximize and screen-half behavior on the website.
+<p align="center">
+  <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="Latest release, including prereleases" /></a>
+  <a href="docs/INSTALL.en.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 or later" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+</p>
 
-A **grid-first window manager** for macOS. Place the current window in a grid column or a numbered zone.
-Tessera is a menu bar app built with SwiftUI, AppKit, and the Accessibility API, with no external packages.
+<p align="center">
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.2/Tessera-0.1.0-arm64.dmg"><strong>Download alpha.2 DMG</strong></a> ·
+  <a href="https://jgoneit.github.io/tessera/?lang=en#demo"><strong>Try it in your browser</strong></a> ·
+  <a href="docs/INSTALL.en.md">Installation guide</a>
+</p>
 
-## Build and run
+<p align="center"><a href="README.md">한국어</a> · <strong>English</strong></p>
 
-Requires macOS 14 or later, Swift 6 or later, and the macOS SDK. Builds target the current Mac's architecture.
+---
 
-```sh
-swift test
-bash scripts/build-app.sh
-open dist/Tessera.app
-```
+Choose your favorite grids from 2×2, 3×2, and 4×2, then move the current window with **Control + Option + arrow keys**.
+Use the same shortcuts across grids and stop at the position and size that feels right.
 
-## Install in Applications and create a DMG
+- **Combine your grids.** Move left and right through the selected grids as your window changes width to match.
+- **Change height one step at a time.** Move between top, full column, and bottom, or maximize with **Control + Option + Return**.
+- **Make it yours.** Choose window spacing, Korean or English, and system, light, or dark appearance.
 
-For everyday use, copy the built `Tessera.app` to `/Applications` and launch it from there.
-Installing on the same Mac does not require a public website or Apple Developer Program membership.
-Do not run both the development copy in `dist` and the installed copy at the same time.
-Tessera lives in the menu bar. Opening Settings makes its window and icon available in Mission Control,
-the Dock, and ⌘Tab. They remain available while Settings is minimized or behind another app.
-Closing Settings returns Tessera to menu-bar-only mode.
-
-```sh
-bash scripts/build-dmg.sh
-```
-
-This creates a DMG in `dist` with the version and architecture in its filename. To install, drag Tessera
-from the DMG to Applications. To package an already verified app without rebuilding it, use
-`bash scripts/build-dmg.sh --skip-build`. See the [installation guide](docs/INSTALL.en.md) for installation,
-updates, and Accessibility permission.
-
-The current app uses local ad hoc signing and is not notarized by Apple. A DMG is an installation container;
-it does not replace Developer ID signing or notarization. macOS may block an app downloaded from the internet
-with a verification warning. Using Developer ID signing and notarization for general distribution requires
-Apple Developer Program membership. See [Apple's Developer ID guide](https://developer.apple.com/developer-id/)
-and [Apple's guide to opening apps](https://support.apple.com/102445).
-
-The current script creates a DMG for the architecture of the Mac that builds it. An Apple Silicon `arm64`
-build is not labeled as an Intel or universal app. Creating a DMG does not upload it or publish a release.
-
-## App bundle
-
-The build script packages the release executable, Info.plist, and app icon into `dist/Tessera.app`,
-then applies a local ad hoc signature and validates the bundle. No Xcode project generation or additional
-package installation is required.
-The app lives in the menu bar as a single monochrome three-pane icon, without an app name next to it.
-Its template image adapts to the menu bar background and selection state. A tooltip and accessible name remain available.
-The app and Settings use the supplied color artwork, with standard macOS icon sizes generated at build time.
-Opening the app again shows Settings, where the latest operation result appears at the bottom.
-
-Some Command Line Tools distributions omit Swift Testing macro discovery. The package manifest compensates
-by locating the active compiler's bundle directory, without hard-coding user or SDK absolute paths.
+[Try the web demo](https://jgoneit.github.io/tessera/?lang=en#demo): choose a grid, then use your arrow keys and Return.
 
 ## How to use
 
@@ -186,6 +159,57 @@ It does not activate the UI or move real windows.
 ```sh
 TESSERA_UI_PREVIEW_DIR="$PWD/.build/ui-previews" swift test
 ```
+
+## Build and run
+
+Built with SwiftUI, AppKit, and the Accessibility API, with no external packages.
+Requires macOS 14 or later, Swift 6 or later, and the macOS SDK. Builds target the current Mac's architecture.
+
+```sh
+swift test
+bash scripts/build-app.sh
+open dist/Tessera.app
+```
+
+## Install in Applications and create a DMG
+
+For everyday use, copy the built `Tessera.app` to `/Applications` and launch it from there.
+Installing on the same Mac does not require a public website or Apple Developer Program membership.
+Do not run both the development copy in `dist` and the installed copy at the same time.
+Tessera lives in the menu bar. Opening Settings makes its window and icon available in Mission Control,
+the Dock, and ⌘Tab. They remain available while Settings is minimized or behind another app.
+Closing Settings returns Tessera to menu-bar-only mode.
+
+```sh
+bash scripts/build-dmg.sh
+```
+
+This creates a DMG in `dist` with the version and architecture in its filename. To install, drag Tessera
+from the DMG to Applications. To package an already verified app without rebuilding it, use
+`bash scripts/build-dmg.sh --skip-build`. See the [installation guide](docs/INSTALL.en.md) for installation,
+updates, and Accessibility permission.
+
+The current app uses local ad hoc signing and is not notarized by Apple. A DMG is an installation container;
+it does not replace Developer ID signing or notarization. macOS may block an app downloaded from the internet
+with a verification warning. Using Developer ID signing and notarization for general distribution requires
+Apple Developer Program membership. See [Apple's Developer ID guide](https://developer.apple.com/developer-id/)
+and [Apple's guide to opening apps](https://support.apple.com/102445).
+
+The current script creates a DMG for the architecture of the Mac that builds it. An Apple Silicon `arm64`
+build is not labeled as an Intel or universal app. Creating a DMG does not upload it or publish a release.
+
+## App bundle
+
+The build script packages the release executable, Info.plist, and app icon into `dist/Tessera.app`,
+then applies a local ad hoc signature and validates the bundle. No Xcode project generation or additional
+package installation is required.
+The app lives in the menu bar as a single monochrome three-pane icon, without an app name next to it.
+Its template image adapts to the menu bar background and selection state. A tooltip and accessible name remain available.
+The app and Settings use the supplied color artwork, with standard macOS icon sizes generated at build time.
+Opening the app again shows Settings, where the latest operation result appears at the bottom.
+
+Some Command Line Tools distributions omit Swift Testing macro discovery. The package manifest compensates
+by locating the active compiler's bundle directory, without hard-coding user or SDK absolute paths.
 
 ## Window and display handling
 

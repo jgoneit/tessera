@@ -1,61 +1,37 @@
-# Tessera
+<p align="center">
+  <a href="https://jgoneit.github.io/tessera/?lang=ko">
+    <img src="Resources/AppIcon.png" width="112" height="112" alt="Tessera 앱 아이콘" />
+  </a>
+</p>
 
-[한국어](README.md) | [English](README.en.md)
+<h1 align="center">Tessera</h1>
 
-[소개 페이지](https://jgoneit.github.io/tessera/?lang=ko)
+<p align="center"><strong>여러 격자를, 하나의 방향키 흐름으로.</strong><br />macOS를 위한 메뉴바 창 배치 앱</p>
 
-[Apple Silicon용 alpha.2 다운로드](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2)
-— 최대화·화면 반쪽 배치와 같은 동작을 소개 페이지에서도 체험할 수 있습니다.
+<p align="center">
+  <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="최신 릴리스 (사전 릴리스 포함)" /></a>
+  <a href="docs/INSTALL.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 이상" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.2"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+</p>
 
-macOS용 **Grid-first Window Manager**. 현재 창을 격자의 열이나 번호가 있는 Zone에 배치합니다.
-SwiftUI·AppKit·Accessibility API로 만든 메뉴바 앱이며 외부 패키지를 사용하지 않습니다.
+<p align="center">
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.2/Tessera-0.1.0-arm64.dmg"><strong>alpha.2 DMG 다운로드</strong></a> ·
+  <a href="https://jgoneit.github.io/tessera/?lang=ko#demo"><strong>웹에서 직접 체험</strong></a> ·
+  <a href="docs/INSTALL.md">설치 안내</a>
+</p>
 
-## 빌드와 실행
+<p align="center"><strong>한국어</strong> · <a href="README.en.md">English</a></p>
 
-macOS 14 이상, Swift 6 이상과 macOS SDK가 필요합니다. 현재 Mac의 아키텍처로 빌드합니다.
+---
 
-```sh
-swift test
-bash scripts/build-app.sh
-open dist/Tessera.app
-```
+2×2·3×2·4×2 중 자주 쓰는 격자를 골라두고, **Control + Option + 방향키**로 현재 창을 옮기세요.
+격자마다 다른 단축키를 외울 필요 없이, 원하는 위치와 크기에서 멈추면 됩니다.
 
-## 응용 프로그램 설치와 DMG
+- **격자를 함께 사용해요.** 선택한 격자의 열을 좌우로 이동하며 창 너비도 함께 바뀝니다.
+- **높이도 한 단계씩.** 위칸·열 전체·아래칸으로 이동하고, **Control + Option + Return**으로 최대화합니다.
+- **내 작업 환경에 맞게.** 창 간격, 한국어·영어, 시스템·라이트·다크 테마를 설정할 수 있습니다.
 
-일상적으로 사용할 때는 빌드한 `Tessera.app`을 `/Applications`(응용 프로그램)에 복사하고
-그 위치에서 실행합니다. 같은 Mac에 설치하는 데 웹 공개나 Apple Developer Program 가입은 필요하지 않습니다.
-개발용 `dist` 경로의 앱과 설치한 앱을 동시에 실행하지 마세요. 앱은 메뉴바에 상주합니다.
-설정 창을 열면 Mission Control·Dock·⌘Tab에서 Tessera를 찾을 수 있습니다. 설정 창을 최소화하거나
-다른 앱 뒤에 두어도 표시를 유지하며, 설정 창을 닫으면 메뉴바 전용으로 돌아갑니다.
-
-```sh
-bash scripts/build-dmg.sh
-```
-
-`dist`에 버전·아키텍처가 표시된 DMG를 생성합니다. DMG 안의 Tessera를 Applications로 드래그해 설치합니다.
-이미 검증한 앱을 다시 빌드하지 않고 포장하려면 `bash scripts/build-dmg.sh --skip-build`를 사용합니다.
-설치·업데이트·손쉬운 사용 권한 안내는 [설치 안내](docs/INSTALL.md)를 참고하세요.
-
-현재 앱은 로컬 ad hoc 서명이며 Apple 공증을 받지 않았습니다. DMG는 설치용 포장으로,
-Developer ID 서명·공증을 대신하지 않습니다. 인터넷에서 내려받은 앱은 macOS의 확인 경고로 실행이 차단될 수 있습니다.
-일반 사용자 대상 배포에서 Developer ID 서명과 공증을 사용하려면 Apple Developer Program이 필요합니다.
-[Apple Developer ID 안내](https://developer.apple.com/developer-id/)와
-[Apple의 앱 실행 안내](https://support.apple.com/102445)를 참고하세요.
-
-현재 스크립트는 빌드한 Mac의 아키텍처용 DMG를 만듭니다. Apple Silicon의 `arm64` 빌드를
-Intel Mac용 또는 universal 앱으로 표시하지 않습니다. DMG 생성은 웹 업로드나 공개 릴리스를 수행하지 않습니다.
-
-## 앱 번들
-
-빌드 스크립트는 release 실행 파일·Info.plist·앱 아이콘을 `dist/Tessera.app`에 묶고,
-로컬 ad hoc 서명과 번들 검증을 수행합니다. Xcode 프로젝트 생성이나 별도 패키지 설치는 필요하지 않습니다.
-앱은 메뉴바의 단색 세 칸 아이콘 하나로 상주합니다. 앱 이름은 표시하지 않으며,
-template 이미지가 메뉴바 배경과 선택 상태에 맞춰 표시됩니다. 툴팁과 접근성 이름은 유지합니다.
-앱·설정 화면은 제공된 컬러 원본 이미지를 사용하며, 빌드 시 표준 macOS 아이콘 크기를 생성합니다.
-앱을 다시 열면 Settings가 표시되며, 화면 아래에서 마지막 작업 결과를 확인할 수 있습니다.
-
-일부 Command Line Tools 배포본의 Swift Testing 매크로 탐색 누락은 manifest가
-활성 컴파일러의 번들 디렉터리를 찾아 보완합니다. 사용자·SDK의 절대 경로를 고정하지 않습니다.
+[웹 체험](https://jgoneit.github.io/tessera/?lang=ko#demo)에서는 격자를 고른 뒤 방향키와 Return으로 바로 눌러볼 수 있어요.
 
 ## 사용 방법
 
@@ -173,6 +149,54 @@ UI 렌더 검증용 이미지는 선택적으로 다음 명령으로 만들 수 
 ```sh
 TESSERA_UI_PREVIEW_DIR="$PWD/.build/ui-previews" swift test
 ```
+
+## 빌드와 실행
+
+SwiftUI·AppKit·Accessibility API로 구현했으며 외부 패키지를 사용하지 않습니다.
+macOS 14 이상, Swift 6 이상과 macOS SDK가 필요합니다. 현재 Mac의 아키텍처로 빌드합니다.
+
+```sh
+swift test
+bash scripts/build-app.sh
+open dist/Tessera.app
+```
+
+## 응용 프로그램 설치와 DMG
+
+일상적으로 사용할 때는 빌드한 `Tessera.app`을 `/Applications`(응용 프로그램)에 복사하고
+그 위치에서 실행합니다. 같은 Mac에 설치하는 데 웹 공개나 Apple Developer Program 가입은 필요하지 않습니다.
+개발용 `dist` 경로의 앱과 설치한 앱을 동시에 실행하지 마세요. 앱은 메뉴바에 상주합니다.
+설정 창을 열면 Mission Control·Dock·⌘Tab에서 Tessera를 찾을 수 있습니다. 설정 창을 최소화하거나
+다른 앱 뒤에 두어도 표시를 유지하며, 설정 창을 닫으면 메뉴바 전용으로 돌아갑니다.
+
+```sh
+bash scripts/build-dmg.sh
+```
+
+`dist`에 버전·아키텍처가 표시된 DMG를 생성합니다. DMG 안의 Tessera를 Applications로 드래그해 설치합니다.
+이미 검증한 앱을 다시 빌드하지 않고 포장하려면 `bash scripts/build-dmg.sh --skip-build`를 사용합니다.
+설치·업데이트·손쉬운 사용 권한 안내는 [설치 안내](docs/INSTALL.md)를 참고하세요.
+
+현재 앱은 로컬 ad hoc 서명이며 Apple 공증을 받지 않았습니다. DMG는 설치용 포장으로,
+Developer ID 서명·공증을 대신하지 않습니다. 인터넷에서 내려받은 앱은 macOS의 확인 경고로 실행이 차단될 수 있습니다.
+일반 사용자 대상 배포에서 Developer ID 서명과 공증을 사용하려면 Apple Developer Program이 필요합니다.
+[Apple Developer ID 안내](https://developer.apple.com/developer-id/)와
+[Apple의 앱 실행 안내](https://support.apple.com/102445)를 참고하세요.
+
+현재 스크립트는 빌드한 Mac의 아키텍처용 DMG를 만듭니다. Apple Silicon의 `arm64` 빌드를
+Intel Mac용 또는 universal 앱으로 표시하지 않습니다. DMG 생성은 웹 업로드나 공개 릴리스를 수행하지 않습니다.
+
+## 앱 번들
+
+빌드 스크립트는 release 실행 파일·Info.plist·앱 아이콘을 `dist/Tessera.app`에 묶고,
+로컬 ad hoc 서명과 번들 검증을 수행합니다. Xcode 프로젝트 생성이나 별도 패키지 설치는 필요하지 않습니다.
+앱은 메뉴바의 단색 세 칸 아이콘 하나로 상주합니다. 앱 이름은 표시하지 않으며,
+template 이미지가 메뉴바 배경과 선택 상태에 맞춰 표시됩니다. 툴팁과 접근성 이름은 유지합니다.
+앱·설정 화면은 제공된 컬러 원본 이미지를 사용하며, 빌드 시 표준 macOS 아이콘 크기를 생성합니다.
+앱을 다시 열면 Settings가 표시되며, 화면 아래에서 마지막 작업 결과를 확인할 수 있습니다.
+
+일부 Command Line Tools 배포본의 Swift Testing 매크로 탐색 누락은 manifest가
+활성 컴파일러의 번들 디렉터리를 찾아 보완합니다. 사용자·SDK의 절대 경로를 고정하지 않습니다.
 
 ## 창과 화면 처리
 
