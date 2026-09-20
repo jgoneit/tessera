@@ -1,6 +1,5 @@
 // Tessera user-facing strings. English source text is the stable key.
 "Tessera" = "Tessera";
-"v0.1" = "v0.1";
 "System" = "시스템";
 "English" = "English";
 "Korean" = "한국어";
@@ -194,3 +193,14 @@
 "Record a window shortcut, then use Apply Shortcuts to save all five." = "창 배치 단축키를 기록한 다음 단축키 적용을 눌러 다섯 동작을 함께 저장하세요.";
 "Maximize shortcut was not assigned because a direction already uses it. Your direction shortcuts are unchanged." = "방향 이동에 사용 중인 조합이어서 최대화 단축키를 지정하지 않았습니다. 기존 방향 단축키는 유지됩니다.";
 "Maximize shortcut was not assigned. Your direction shortcuts are unchanged. %@" = "최대화 단축키를 지정하지 못했습니다. 기존 방향 단축키는 유지됩니다. %@";
+"Updates" = "업데이트";
+"Automatically check for updates" = "업데이트 자동 확인";
+"Checks once a day. Updates install only when you choose." = "하루 한 번 확인해요. 설치는 직접 선택할 때만 진행해요.";
+"Last checked: %@" = "마지막 확인: %@";
+"Update Available…" = "새 버전 있음…";
+"Check for Updates…" = "업데이트 확인…";
+"Check for a newer version of Tessera." = "새로운 Tessera 버전이 있는지 확인하세요.";
+"Checking for updates…" = "업데이트 확인 중…";
+"Version %@ is available." = "%@ 버전을 사용할 수 있어요.";
+"You're up to date." = "최신 버전이에요.";
+"Could not check for updates. Try again later." = "업데이트를 확인하지 못했어요. 나중에 다시 시도해 주세요.";

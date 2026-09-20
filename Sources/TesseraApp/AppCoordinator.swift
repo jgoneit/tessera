@@ -8,6 +8,7 @@ import TesseraCore
 @MainActor
 final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindowDelegate {
     let preferences: Preferences
+    let updates: UpdateService
     let shortcutRecorder = ShortcutRecordingBridge()
     @Published private(set) var permissionGranted = false
     @Published private(set) var statusMessage: String
@@ -37,12 +38,15 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
     private var menuCapture: MenuCapture?
     private var directMenuCapture: MenuCapture?
     private var stopping = false
+    private var updateInstallationPending = false
+    private var presentation = AppPresentation()
     private lazy var placementInput = BufferedPlacementInput(
         prepare: { [weak self] in await self?.preparePlacementBatch() },
         onIdle: { [weak self] in self?.updateBusyState() })
 
-    init(preferences: Preferences = Preferences()) {
+    init(preferences: Preferences = Preferences(), updates: UpdateService? = nil) {
         self.preferences = preferences
+        self.updates = updates ?? UpdateService()
         self.statusMessage = L10n.text("Use a directional shortcut to arrange your active window.",
             language: preferences.language)
         super.init()
@@ -133,6 +137,30 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         }
         refreshPermission()
         registerSavedShortcuts()
+        updates.onPresentationChanged = { [weak self] visible in
+            guard let self else { return }
+            self.presentation.updateOpen = visible
+            NSApp.setActivationPolicy(self.presentation.activationPolicy)
+            if visible {
+                self.cancelSelection(reason: "update window opened")
+                self.discardMenuCapture()
+                self.shortcutRecorder.cancelRecording()
+                NSApp.activate(ignoringOtherApps: true)
+            } else if self.updateInstallationPending, !self.stopping {
+                // If installation was interrupted, leave the running app usable.
+                self.updateInstallationPending = false
+                self.registerSavedShortcuts()
+            }
+        }
+        updates.onWillInstall = { [weak self] in
+            guard let self else { return }
+            self.updateInstallationPending = true
+            self.cancelSelection(reason: "installing update")
+            self.discardMenuCapture()
+            self.shortcutRecorder.cancelRecording()
+            self.shortcuts.unregister()
+        }
+        updates.start()
         rebuildMenu(menu)
         observers.append(NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
@@ -181,7 +209,8 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         refreshPermission()
         rebuildMenu(menu)
         discardMenuCapture()
-        guard permissionGranted, !isWorking, let app = externalFrontmostApplication() else { return }
+        guard !stopping, !updateInstallationPending, permissionGranted, !isWorking,
+              let app = externalFrontmostApplication() else { return }
         let pid = app.processIdentifier
         menuCapture = MenuCapture(id: UUID(), pid: pid, appName: app.localizedName ?? L10n.text("Window"),
             task: Task { try await windows.capture(pid: pid) })
@@ -217,14 +246,14 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         menu.addItem(.separator())
         let arrange = NSMenuItem(title: L10n.text("Arrange Window…"), action: #selector(arrangeFromMenu), keyEquivalent: "")
         arrange.target = self
-        arrange.isEnabled = !isWorking
+        arrange.isEnabled = !isWorking && !stopping && !updateInstallationPending
         menu.addItem(arrange)
         let maximizeTitle = preferences.directionalShortcuts.maximize.map {
             L10n.format("%@: %@", L10n.text("Maximize"), $0.displayString)
         } ?? L10n.text("Maximize")
         let maximize = NSMenuItem(title: maximizeTitle, action: #selector(maximizeFromMenu), keyEquivalent: "")
         maximize.target = self
-        maximize.isEnabled = !isWorking
+        maximize.isEnabled = !isWorking && !stopping && !updateInstallationPending
         menu.addItem(maximize)
         for (name, direction) in [("Left", GridDirection.left), ("Right", .right), ("Up", .up), ("Down", .down)] {
             let item = NSMenuItem(title: L10n.format("%@: %@", L10n.text(name), preferences.directionalShortcuts[direction].displayString), action: nil, keyEquivalent: "")
@@ -240,6 +269,10 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         let settings = NSMenuItem(title: L10n.text("Settings…"), action: #selector(openSettingsFromMenu), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
+        let update = NSMenuItem(title: updates.menuTitle(), action: #selector(checkForUpdates), keyEquivalent: "")
+        update.target = self
+        update.isEnabled = updates.canCheck
+        menu.addItem(update)
         let quit = NSMenuItem(title: L10n.text("Quit Tessera"), action: #selector(quitApp), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
@@ -250,6 +283,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         preferences.setLayout(layout, enabled: !preferences.enabledLayouts.contains(layout))
     }
     @objc private func openSettingsFromMenu() { showSettings() }
+    @objc func checkForUpdates() { updates.checkForUpdates() }
     @objc private func quitApp() { NSApp.terminate(nil) }
     @objc private func arrangeFromMenu() {
         let capture = menuCapture
@@ -261,6 +295,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
     }
 
     @objc private func maximizeFromMenu() {
+        guard !stopping, !updateInstallationPending else { discardMenuCapture(); return }
         let capture = menuCapture
         menuCapture = nil
         cancelSelection(reason: "maximize from menu")
@@ -275,7 +310,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
     }
 
     private func handleAction(_ action: PlacementAction) {
-        guard !recordingShortcut, !stopping else { return }
+        guard !recordingShortcut, !stopping, !updateInstallationPending else { return }
         if action == .maximize { overlay.cancelDirectionalRepeat() }
         refreshPermission()
         guard permissionGranted else { cancelSelection(reason: "permission required"); showSettings(); return }
@@ -348,6 +383,10 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
     }
 
     private func beginSelector(pid: pid_t, appName: String, captured: Task<WindowTarget, Error>? = nil) {
+        guard !stopping, !updateInstallationPending else {
+            if let captured { Task { if let target = try? await captured.value { await windows.discard(target: target) } } }
+            return
+        }
         cancelSelection(reason: "open selector")
         refreshPermission()
         guard permissionGranted else {
@@ -631,7 +670,8 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         }
         // A real settings window participates in Mission Control and app switching.
         // Pickers and feedback never promote the menu-bar app to regular mode.
-        NSApp.setActivationPolicy(.regular)
+        presentation.settingsOpen = true
+        NSApp.setActivationPolicy(presentation.activationPolicy)
         if settingsWindow?.isMiniaturized == true { settingsWindow?.deminiaturize(nil) }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -640,7 +680,8 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow, window === settingsWindow else { return }
         shortcutRecorder.cancelRecording()
-        NSApp.setActivationPolicy(.accessory)
+        presentation.settingsOpen = false
+        NSApp.setActivationPolicy(presentation.activationPolicy)
     }
 
     private func applyAppearance(_ theme: AppTheme) {
@@ -674,6 +715,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
     }
 
     func applyShortcuts(_ bindings: DirectionalShortcuts) {
+        guard !stopping, !updateInstallationPending else { return }
         cancelSelection(reason: "shortcuts changed")
         shortcutError = nil
         do {

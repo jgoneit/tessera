@@ -40,10 +40,15 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [.executable(name: "Tessera", targets: ["TesseraApp"])],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
+    ],
     targets: [
         .target(name: "TesseraCore"),
-        .executableTarget(name: "TesseraApp", dependencies: ["TesseraCore"],
-            resources: [.process("Resources")]),
+        .executableTarget(name: "TesseraApp", dependencies: [
+            "TesseraCore", .product(name: "Sparkle", package: "Sparkle"),
+        ], resources: [.process("Resources")],
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),
         .testTarget(name: "TesseraCoreTests", dependencies: ["TesseraCore"], swiftSettings: testingMacroSettings),
         .testTarget(name: "TesseraAppTests", dependencies: ["TesseraApp"], swiftSettings: testingMacroSettings),
     ]

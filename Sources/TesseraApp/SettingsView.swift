@@ -7,12 +7,16 @@ private typealias SettingsState<Value> = SwiftUI.State<Value>
 struct SettingsView: View {
     @ObservedObject var coordinator: AppCoordinator
     @ObservedObject var preferences: Preferences
+    @ObservedObject private var updates: UpdateService
+    private let version: AppVersion
     @SettingsState private var draftShortcuts: DirectionalShortcuts
     @SettingsState private var shortcutsExpanded: Bool
 
-    init(coordinator: AppCoordinator, preferences: Preferences) {
+    init(coordinator: AppCoordinator, preferences: Preferences, version: AppVersion = .current) {
         self.coordinator = coordinator
         self.preferences = preferences
+        self.updates = coordinator.updates
+        self.version = version
         _draftShortcuts = SettingsState(initialValue: preferences.directionalShortcuts)
         _shortcutsExpanded = SettingsState(initialValue: !coordinator.shortcutsActive || coordinator.shortcutError != nil)
     }
@@ -25,6 +29,7 @@ struct SettingsView: View {
                 layoutCard
                 appearanceCard
                 shortcutsCard
+                updateCard
                 guidance
                 statusFooter
             }
@@ -50,12 +55,49 @@ struct SettingsView: View {
                 .accessibilityHidden(true)
             Text("Tessera").font(.system(size: 22, weight: .semibold))
             Spacer(minLength: 8)
-            Text("v0.1")
+            Text(version.displayVersion)
                 .font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                .lineLimit(1).fixedSize()
                 .padding(.horizontal, 9).padding(.vertical, 5)
                 .background(.quaternary, in: Capsule())
         }
         .padding(.bottom, 2)
+    }
+
+    private var updateCard: some View {
+        TesseraSurface(padding: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(t("Updates")).font(.headline).accessibilityAddTraits(.isHeader)
+                Toggle(t("Automatically check for updates"), isOn: Binding(
+                    get: { updates.automaticChecksEnabled },
+                    set: { updates.automaticChecksEnabled = $0 }))
+                    .toggleStyle(.switch)
+                Text(t("Checks once a day. Updates install only when you choose."))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Divider()
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(updates.statusText(language: preferences.language))
+                            .font(.callout)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let date = updates.lastCheckDate {
+                            Text(L10n.format("Last checked: %@",
+                                date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened)
+                                    .locale(Locale(identifier: L10n.resolvedLanguage(preferences.language).rawValue))),
+                                language: preferences.language))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    Button(updates.menuTitle(language: preferences.language)) {
+                        coordinator.checkForUpdates()
+                    }
+                    .disabled(!updates.canCheck)
+                    .fixedSize()
+                }
+            }
+        }
     }
 
     @ViewBuilder
