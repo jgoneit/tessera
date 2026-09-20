@@ -28,11 +28,11 @@ if [[ ! -d "$app_path" || ! -f "$info_path" ]]; then
 fi
 
 /usr/bin/plutil -lint "$info_path"
-/usr/bin/codesign --verify --strict "$app_path"
-version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info_path")"
+bash scripts/verify-app-bundle.sh "$app_path"
+version="$(/usr/libexec/PlistBuddy -c 'Print :TesseraReleaseVersion' "$info_path")"
 executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$info_path")"
 if [[ ! "$version" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
-    printf 'CFBundleShortVersionString cannot be used in a DMG filename.\n' >&2
+    printf 'TesseraReleaseVersion cannot be used in a DMG filename.\n' >&2
     exit 1
 fi
 if [[ ! "$executable_name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
@@ -82,9 +82,15 @@ Tessera — 로컬 설치 / Local installation
 3. 이 디스크를 추출하고 응용 프로그램 폴더의 Tessera를 실행하세요.
 4. 메뉴바의 세 칸 아이콘에서 설정을 여세요.
    설정 창은 Mission Control에, 아이콘은 Dock·⌘Tab에 표시됩니다.
-   설정을 최소화해도 앱 아이콘은 유지되며, 창을 닫으면 메뉴바 전용으로 돌아갑니다.
+   설정이나 업데이트 창을 최소화해도 앱 아이콘은 유지되며,
+   두 창을 모두 닫으면 메뉴바 전용으로 돌아갑니다.
 5. 시스템 설정 > 개인정보 보호 및 보안 > 손쉬운 사용에서 설치한 Tessera를 허용하세요.
    설정의 새로고침 버튼으로 권한을 확인하세요.
+
+alpha.3 이하 사용자는 이번 버전을 한 번 직접 설치해야 합니다. 이후에는 실행 중 하루 한 번
+업데이트를 확인하며, 새 버전은 메뉴·설정에 표시됩니다. 업데이트 확인에서 직접 설치를
+선택하면 다운로드하고 재실행합니다. 자동 설치는 하지 않습니다. 설정에서 자동 확인을
+끌 수 있으며 업데이트 후에는 손쉬운 사용 권한을 다시 허용해야 할 수 있습니다.
 
 기본 ⌃⌥Return으로 현재 창을 최대화합니다. 최대화 후 ⌃⌥↑/↓는 화면 위/아래 절반,
 ⌃⌥←/→는 선택한 격자의 열로 이동합니다. 최대화는 메뉴바·Dock을 제외한 영역을 채우며,
@@ -99,9 +105,15 @@ English
 3. Eject this disk, then open Tessera from Applications.
 4. Use Tessera's three-tile menu bar icon to open Settings.
    Its Settings window appears in Mission Control, and its icon appears in the Dock and ⌘Tab.
-   The app icon remains when Settings is minimized; closing the window returns to menu bar-only mode.
+   The app icon remains when Settings or an update window is minimized.
+   Closing both windows returns to menu bar-only mode.
 5. Allow the installed Tessera in System Settings > Privacy & Security > Accessibility.
    Use the refresh button in Tessera Settings to check access.
+
+Users of alpha.3 or earlier must install this release manually once. Afterward, Tessera checks
+once a day while running and shows available updates in its menu and Settings. Choose to install
+from Check for Updates to download and relaunch. Updates are never installed automatically.
+Automatic checks can be disabled in Settings. Accessibility approval may need renewal after updating.
 
 The default ⌃⌥Return shortcut maximizes the current window. From maximized, ⌃⌥↑/↓ moves to
 the screen's top/bottom half, and ⌃⌥←/→ enters a column in your selected grids. Maximize fills
@@ -111,7 +123,7 @@ This local app is ad hoc signed, without Developer ID signing or Apple notarizat
 A DMG packages the app; it does not replace notarization or macOS security checks.
 INSTALL_TEXT
 
-/usr/bin/codesign --verify --strict "$staging_path/Tessera.app"
+/usr/bin/codesign --verify --deep --strict "$staging_path/Tessera.app"
 /usr/bin/hdiutil create -srcfolder "$staging_path" -volname "Tessera" \
     -fs HFS+ -format UDZO "$temporary_image"
 /usr/bin/hdiutil verify "$temporary_image"

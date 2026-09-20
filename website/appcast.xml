@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Tessera</title>
+        <item>
+            <title>Tessera 0.1.0-alpha.4</title>
+            <pubDate>Sun, 20 Sep 2026 13:23:02 +0900</pubDate>
+            <link>https://jgoneit.github.io/tessera/</link>
+            <sparkle:channel>alpha</sparkle:channel>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.1.0-alpha.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># Tessera 0.1.0-alpha.4
+
+## 한국어
+- 메뉴와 설정에서 업데이트를 확인하고 직접 설치할 수 있습니다.
+- 하루 한 번 자동으로 확인하며, 새 버전은 작업을 방해하지 않고 메뉴와 설정에 표시됩니다. 자동 확인은 끌 수 있습니다.
+- 앱 버전 표시를 릴리스 이름과 맞췄습니다.
+- 업데이트 창이 열려 있는 동안 Dock·⌘Tab에서 Tessera를 찾을 수 있습니다.
+
+alpha.3 또는 이전 버전에는 업데이터가 없으므로 alpha.4를 한 번 직접 설치해 주세요. 업데이트 뒤 손쉬운 사용 권한을 다시 허용해야 할 수 있습니다.
+
+## English
+- Check for updates from the menu or Settings, then choose when to install.
+- Daily automatic checks quietly indicate new releases in the menu and Settings. Automatic checks can be turned off.
+- The app now displays the full release version.
+- Tessera appears in the Dock and app switcher while its update window is open.
+
+Alpha.3 and earlier do not include an updater. Install alpha.4 manually once to receive future updates. Accessibility approval may need renewal after an update.
+
+Apple Silicon · macOS 14+ · ad hoc signed, not notarized.
+</description>
+            <enclosure url="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.4/Tessera-0.1.0-alpha.4-arm64.dmg" length="3263021" type="application/octet-stream" sparkle:edSignature="0ayMIylI1o+gsuEC23z/NOl7tf8Eo1Ggrz7xQIxk5Ah7YzojvrQ9ZfmYz6u2bS8fZY6XxFO6A9/UBi41wF9yCQ=="></enclosure>
+        </item>
+    </channel>
+</rss><!-- sparkle-signatures:
+edSignature: LrWRvGDAcNtRk5hFEmHdrXJLkS3lgcVyKzHinjvwsak/EGswvsYUFIv1k4OF5c1oKaA0kaEICCY+ZKrqtol2Ag==
+length: 2562
+-->
