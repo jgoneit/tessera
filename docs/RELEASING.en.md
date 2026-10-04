@@ -8,7 +8,7 @@ releases and Pages, and the login keychain containing Tessera's update key.
 
 ## Versions and signing keys
 
-- `TesseraReleaseVersion` in `Resources/Info.plist` is the display version, such as `0.1.0-alpha.4`.
+- `TesseraReleaseVersion` in `Resources/Info.plist` is the display version, such as `0.1.0-alpha.5`.
   Prefix it with `v` for the Git tag, and use the full display version in the DMG filename.
 - `CFBundleShortVersionString` is the base version, such as `0.1.0`. `CFBundleVersion` is a continually increasing
   integer build number. Updates compare build numbers, so never reuse an earlier number for a new release.
@@ -57,8 +57,8 @@ bash scripts/prepare-update.sh "$TESSERA_RELEASE_NOTES"
 
 - `build-app.sh` assembles the executable, resources, and Sparkle framework and helpers into `dist/Tessera.app`.
   It signs nested components outward and checks architectures, links, load paths, and configuration.
-- `build-dmg.sh --skip-build` packages the verified bundle without rebuilding. For alpha.4 arm64,
-  the result is `dist/Tessera-0.1.0-alpha.4-arm64.dmg`.
+- `build-dmg.sh --skip-build` packages the verified bundle without rebuilding. For alpha.5 arm64,
+  the result is `dist/Tessera-0.1.0-alpha.5-arm64.dmg`.
 - `prepare-update.sh <notes.md>` signs the DMG and feed using the existing key. It embeds bilingual notes
   and creates `website/appcast.xml` and `dist/SHA256SUMS`. The current tool publishes complete DMGs on the
   alpha channel and does not generate delta updates.
@@ -70,7 +70,7 @@ The public-key verifier checks the feed and DMG without accessing the keychain.
 ```sh
 swift scripts/verify-update.swift \
   dist/Tessera.app/Contents/Info.plist website/appcast.xml \
-  dist/Tessera-0.1.0-alpha.4-arm64.dmg
+  dist/Tessera-0.1.0-alpha.5-arm64.dmg
 (cd dist && shasum -a 256 -c SHA256SUMS)
 node --test website/*.test.mjs
 node --check website/app.mjs
@@ -113,13 +113,13 @@ Code-signature verification does not prove successful installation, Accessibilit
 1. Align the Korean/English README, installation guides, and website links with the final version and filename. Commit source,
    documentation, and the signed appcast by purpose. Run PR checks and the corresponding Seal Task's `verify`, followed by
    `complete` with the exact returned Run ID.
-2. Create a prerelease such as `v0.1.0-alpha.4` from the **exact verified source commit**. Attach the final DMG and
+2. Create a prerelease such as `v0.1.0-alpha.5` from the **exact verified source commit**. Attach the final DMG and
    `SHA256SUMS`, preserving existing releases and assets.
 3. Download both public assets again and verify their checksum and signature. Do not publish a feed pointing to unavailable assets.
 4. Merge the PR to deploy Pages and verify the signature at `https://jgoneit.github.io/tessera/appcast.xml`.
    Check public Korean/English download links and a manual update check in the installed app.
 5. Record actual results and untested scenarios in both languages. Retain the notice that **alpha.3 and earlier have no updater
-   and require a one-time manual alpha.4 installation**.
+   and require a one-time manual installation of the latest DMG**.
 
 Never directly edit and publish a signed appcast. Stage any change, sign it again using the existing key, and deploy only after
 public-key verification. To withdraw a bad update, remove its item from the feed and re-sign the feed. Repair an already installed
