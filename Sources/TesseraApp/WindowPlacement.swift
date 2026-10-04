@@ -8,6 +8,7 @@ enum WindowPlacement {
     static func perform(
         frame: CGRect,
         visibleFrame: CGRect,
+        retrySizeAfterMove: Bool = false,
         readFrame: () throws -> CGRect,
         validate: () throws -> Void,
         setSize: (CGSize) throws -> Void,
@@ -87,7 +88,28 @@ enum WindowPlacement {
             operation = "moving the resized window"
             try setPosition(origin)
             operation = "reading the final window frame"
-            let actual = try observe("final")
+            var actual = try observe("final")
+
+            // Some applications use their previous display's size limit until
+            // the final move is processed. Retry once only when crossing screens;
+            // permanent app constraints still produce the usual constrained result.
+            if retrySizeAfterMove, !PlacementResult.matchesRequestedFrame(actual, frame) {
+                operation = "checking the window before resizing"
+                try validateBeforeWrite()
+                observedFrame = nil
+                operation = "resizing the window"
+                try setSize(frame.size)
+                operation = "reading the resize result"
+                let retried = try observe("resizedAfterDisplayMove")
+                operation = "checking the window before the final move"
+                try validateBeforeWrite()
+                observedFrame = nil
+                operation = "moving the resized window"
+                try setPosition(PlacementGeometry.clampedOrigin(
+                    for: retried.size, desiredOrigin: frame.origin, in: visibleFrame))
+                operation = "reading the final window frame"
+                actual = try observe("final")
+            }
 
             if PlacementResult.matchesRequestedFrame(actual, frame), contains(actual, in: visibleFrame) {
                 return PlacementResult(outcome: .applied, message: L10n.text("Window arranged."), actualFrame: actual)

@@ -1,7 +1,7 @@
 import TesseraCore
 
 /// Serializes window writes while retaining only the latest unstarted request.
-/// Each request carries the layout selected when it was submitted.
+/// Each request carries the layout and display selected when it was submitted.
 @MainActor
 final class PlacementQueue {
     typealias Operation = @MainActor (GridPlacement) async -> PlacementResult

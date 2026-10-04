@@ -5,6 +5,18 @@ import TesseraCore
 struct ScreenSnapshot: Sendable {
     let displays: [DisplayGeometry]
     let primaryTop: CGFloat
+
+    func matches(_ other: ScreenSnapshot) -> Bool {
+        primaryTop == other.primaryTop
+            && displays.sorted { $0.id < $1.id } == other.displays.sorted { $0.id < $1.id }
+    }
+
+    /// Resolve the immutable destination only against the captured topology.
+    /// A disconnected display must never silently fall back to another one.
+    func display(for destination: GridPlacement, captured: ScreenSnapshot) -> DisplayGeometry? {
+        guard matches(captured), let id = destination.displayID else { return nil }
+        return displays.first { $0.id == id }
+    }
 }
 
 @MainActor
