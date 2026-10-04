@@ -342,6 +342,28 @@ struct PlacementQueueTests {
         }
     }
 
+    @Test("Coalescing preserves the display captured by every request")
+    func queuedDisplayDestinations() async {
+        let executor = DelayedPlacementExecutor()
+        let observer = QueueObserver()
+        let queue = makeQueue(executor: executor, observer: observer)
+        let first = GridPlacement(layout: .threeByTwo, target: .column(3), displayID: 1)
+        let second = GridPlacement(layout: .fourByTwo, target: .column(1), displayID: 2)
+        let latest = GridPlacement(layout: .twoByTwo, target: .column(1), displayID: 3)
+        queue.submit(first)
+        await executor.waitForStarts(1)
+        queue.submit(second)
+        queue.submit(latest)
+        queue.finish()
+        executor.completeNext(.applied)
+        await executor.waitForStarts(2)
+        executor.completeNext(.constrained)
+        await observer.waitForFinish()
+        #expect(executor.writes == [first, latest])
+        #expect(observer.results.map { $0.0 } == [first, latest])
+        #expect(executor.maximumConcurrent == 1)
+    }
+
     private func placement(_ target: PlacementTarget, layout: LayoutPreset = .threeByTwo) -> GridPlacement {
         GridPlacement(layout: layout, target: target)
     }
