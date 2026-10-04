@@ -4,6 +4,88 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>Tessera</title>
         <item>
+            <title>Tessera 0.1.0-alpha.5</title>
+            <pubDate>Sun, 04 Oct 2026 22:44:02 +0900</pubDate>
+            <link>https://jgoneit.github.io/tessera/</link>
+            <sparkle:channel>alpha</sparkle:channel>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>0.1.0-alpha.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"># Tessera v0.1.0-alpha.5 — Move across displays
+
+## 한국어
+
+방향키로 창을 배치할 때 다른 모니터까지 이어서 이동할 수 있습니다.
+
+- **모니터 사이 이동:** 화면 경계에서 macOS의 모니터 배치에 따라 다음 화면으로 넘어갑니다.
+  목적지 화면의 작업 영역과 배율로 창 크기를 계산합니다.
+- **좌우 전체 순환:** 맨 왼쪽 모니터에서 왼쪽으로 이동하면 맨 오른쪽 모니터의 마지막 열로,
+  맨 오른쪽에서 오른쪽으로 이동하면 맨 왼쪽 모니터의 첫 열로 이어집니다.
+- **선택기도 함께 이동:** 메뉴바의 ‘창 배치…’에서 방향키로 모니터를 넘기면 선택기와
+  화면 이름·격자가 함께 바뀝니다. 숫자·클릭·최대화는 선택한 목적지 화면에 적용됩니다.
+- **화면 전환 후 크기 보정:** 이전 화면의 크기 제한이 남는 경우 이동 후 한 번 더 크기를 적용합니다.
+  앱 자체의 최소 크기 제한은 유지되며 제한된 배치로 안내합니다.
+- 화면 연결·배치·작업 영역이 바뀌면 대기 중인 배치를 취소합니다. 단일 화면 좌우 순환,
+  격자·간격·언어·테마·단축키 설정은 유지합니다.
+
+### 설치와 업데이트
+
+- macOS 14 이상, **Apple Silicon arm64**용 알파 릴리스입니다.
+- alpha.4 사용자는 Tessera 메뉴 또는 설정에서 **업데이트 확인…**을 선택하세요.
+- 신규 사용자와 alpha.3 이하 사용자는 아래 `Tessera-0.1.0-alpha.5-arm64.dmg`를 받아
+  앱을 Applications로 복사하세요. `SHA256SUMS`로 파일 체크섬을 확인할 수 있습니다.
+- 업데이트 후 macOS가 창 이동 권한을 다시 요구할 수 있습니다.
+  [설치·손쉬운 사용 권한 안내](https://github.com/jgoneit/tessera/blob/v0.1.0-alpha.5/docs/INSTALL.md)를 참고하세요.
+
+### 범위와 복구
+
+로컬 ad hoc 서명과 기존 Sparkle 업데이트 서명을 사용합니다. Developer ID 서명·Apple 공증,
+Intel·Universal 배포는 포함하지 않습니다. 앱의 최소 크기나 전체화면 상태에 따라 창 배치가 제한될 수 있습니다.
+물리적 상하 배치·3대 연결·연결 해제는 자동 검사 범위이며 모든 하드웨어 조합을 실측한 것은 아닙니다.
+
+복구가 필요하면 Tessera를 종료하고 [alpha.4](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4)의
+DMG 또는 보관한 이전 앱을 다시 설치하세요. 환경설정은 삭제하지 말고, 필요하면 손쉬운 사용 권한을 갱신하세요.
+업데이터는 자동 다운그레이드를 하지 않습니다.
+
+## English
+
+Directional window placement now continues across displays.
+
+- **Move between displays:** crossing an edge follows the display arrangement in macOS.
+  Placement uses the destination display's work area and scale.
+- **Wrap across the entire horizontal arrangement:** left from the leftmost display enters the last column
+  of the rightmost display; right from the rightmost enters the first column of the leftmost.
+- **The picker follows:** moving across displays in “Arrange Window…” moves the picker and updates its
+  display name and grid. Numbers, clicks, and Maximize apply to the selected destination.
+- **Correct stale size limits after moving:** when an app still applies its previous display's size limit,
+  Tessera retries the size once after moving. An app's own minimum size still produces constrained feedback.
+- Pending placements are cancelled if the display arrangement or work area changes.
+  Single-display horizontal wrapping and existing grid, spacing, language, theme, and shortcut settings are preserved.
+
+### Install or update
+
+- Alpha release for **Apple Silicon arm64**, requiring macOS 14 or later.
+- On alpha.4, choose **Check for Updates…** in Tessera's menu or Settings.
+- New users and users of alpha.3 or earlier should download `Tessera-0.1.0-alpha.5-arm64.dmg`
+  below and copy the app into Applications. `SHA256SUMS` contains the file checksum.
+- macOS may require renewing Accessibility permission after updating.
+  See the [installation and permission guide](https://github.com/jgoneit/tessera/blob/v0.1.0-alpha.5/docs/INSTALL.en.md).
+
+### Scope and recovery
+
+This release uses local ad hoc signing and the existing Sparkle update signing identity. It does not include
+Developer ID signing, Apple notarization, or Intel/Universal distribution. App size limits and full-screen states
+may restrict placement. Physical vertical arrangements, three-display setups, and unplugging are covered by
+automated checks; not every hardware combination has been tested on devices.
+
+To restore, quit Tessera and reinstall from the [alpha.4](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4)
+DMG or a saved app. Keep your preferences and renew Accessibility permission if needed.
+The updater does not automatically downgrade.
+</description>
+            <enclosure url="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.5/Tessera-0.1.0-alpha.5-arm64.dmg" length="3307087" type="application/octet-stream" sparkle:edSignature="n+9HeFutq+P65gj4l6u9GAS0iTgdpX5rx4uyUHUEctOaL3rHAU08BV6MJePkLUMEaV6C8iutEdZNXWr0HLfVAA=="></enclosure>
+        </item>
+        <item>
             <title>Tessera 0.1.0-alpha.4</title>
             <pubDate>Sun, 20 Sep 2026 13:23:02 +0900</pubDate>
             <link>https://jgoneit.github.io/tessera/</link>
@@ -36,6 +118,6 @@ Apple Silicon · macOS 14+ · ad hoc signed, not notarized.
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: LrWRvGDAcNtRk5hFEmHdrXJLkS3lgcVyKzHinjvwsak/EGswvsYUFIv1k4OF5c1oKaA0kaEICCY+ZKrqtol2Ag==
-length: 2562
+edSignature: L5D6ZtvBWpN26PY6gI0l63wh8PbxNhS2TurNWeAE563V45eR8LwLUBsu4SO+DWm2K7DJrZXpFyzmrbUDNoXYAA==
+length: 8423
 -->
