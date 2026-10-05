@@ -25,6 +25,70 @@ public struct DisplayGeometry: Sendable, Equatable {
 }
 
 public enum DisplaySelection {
+    /// At an outer horizontal edge, continue from the far opposite display.
+    /// A vertical boundary without a neighbor still stops. Displays with no
+    /// horizontal separation (including mirrors) do not form a horizontal loop.
+    public static func navigationDestination(
+        of source: DisplayGeometry, toward direction: GridDirection, in displays: [DisplayGeometry]
+    ) -> DisplayGeometry? {
+        if let adjacent = neighbor(of: source, toward: direction, in: displays) { return adjacent }
+        guard isFinitePositiveRect(source.frame), direction == .left || direction == .right else { return nil }
+        let candidates = displays.filter { candidate in
+            guard candidate.id != source.id, isFinitePositiveRect(candidate.frame),
+                  isFinitePositiveRect(candidate.visibleFrame), candidate.scale.isFinite, candidate.scale > 0 else { return false }
+            return direction == .left
+                ? candidate.frame.minX >= source.frame.maxX
+                : candidate.frame.maxX <= source.frame.minX
+        }
+        return candidates.min { left, right in
+            let leftEdge = direction == .left ? left.frame.maxX : left.frame.minX
+            let rightEdge = direction == .left ? right.frame.maxX : right.frame.minX
+            if leftEdge != rightEdge { return direction == .left ? leftEdge > rightEdge : leftEdge < rightEdge }
+            let leftOverlaps = min(source.frame.maxY, left.frame.maxY) > max(source.frame.minY, left.frame.minY)
+            let rightOverlaps = min(source.frame.maxY, right.frame.maxY) > max(source.frame.minY, right.frame.minY)
+            if leftOverlaps != rightOverlaps { return leftOverlaps }
+            let leftOffset = abs(source.frame.midY - left.frame.midY)
+            let rightOffset = abs(source.frame.midY - right.frame.midY)
+            if leftOffset != rightOffset { return leftOffset < rightOffset }
+            return left.id < right.id
+        }
+    }
+
+    /// Uses physical arrangement, not enumeration order. Prefer screens whose
+    /// perpendicular spans overlap, then the closest edge, perpendicular center,
+    /// and stable display ID. Diagonal screens are a fallback; mirrored screens
+    /// and screens not beyond the requested edge are not directional neighbors.
+    public static func neighbor(
+        of source: DisplayGeometry, toward direction: GridDirection, in displays: [DisplayGeometry]
+    ) -> DisplayGeometry? {
+        guard isFinitePositiveRect(source.frame) else { return nil }
+        let horizontal = direction == .left || direction == .right
+        let sourceMin = horizontal ? source.frame.minY : source.frame.minX
+        let sourceMax = horizontal ? source.frame.maxY : source.frame.maxX
+        let candidates = displays.compactMap { candidate -> (DisplayGeometry, Bool, CGFloat, CGFloat)? in
+            guard candidate.id != source.id, isFinitePositiveRect(candidate.frame),
+                  isFinitePositiveRect(candidate.visibleFrame), candidate.scale.isFinite, candidate.scale > 0 else { return nil }
+            let distance: CGFloat = switch direction {
+            case .left: source.frame.minX - candidate.frame.maxX
+            case .right: candidate.frame.minX - source.frame.maxX
+            case .up: candidate.frame.minY - source.frame.maxY
+            case .down: source.frame.minY - candidate.frame.maxY
+            }
+            guard distance >= 0 else { return nil }
+            let candidateMin = horizontal ? candidate.frame.minY : candidate.frame.minX
+            let candidateMax = horizontal ? candidate.frame.maxY : candidate.frame.maxX
+            let overlaps = min(sourceMax, candidateMax) > max(sourceMin, candidateMin)
+            let offset = abs((sourceMin / 2 + sourceMax / 2) - (candidateMin / 2 + candidateMax / 2))
+            return (candidate, overlaps, distance, offset)
+        }
+        return candidates.min { left, right in
+            if left.1 != right.1 { return left.1 }
+            if left.2 != right.2 { return left.2 < right.2 }
+            if left.3 != right.3 { return left.3 < right.3 }
+            return left.0.id < right.0.id
+        }?.0
+    }
+
     /// Uses largest overlap with the full screen frame. Exact ties retain screen
     /// enumeration order. A window outside every display uses the nearest center.
     /// Invalid windows or a list without any usable displays have no selection.

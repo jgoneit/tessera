@@ -18,7 +18,7 @@ final class ZoneSelectionModel: ObservableObject {
 
     func placement(forZone number: Int) -> GridPlacement? {
         guard (1...zoneCount).contains(number) else { return nil }
-        return GridPlacement(layout: layout, target: .zone(number))
+        return GridPlacement(layout: layout, target: .zone(number), displayID: state.display?.id)
     }
 
     func move(_ direction: GridDirection, isRepeat: Bool = false) -> GridPlacement? {
@@ -152,6 +152,8 @@ final class OverlayController {
     private var keyMonitor: Any?
     private var onOutsideClick: (() -> Void)?
     private var feedbackTask: Task<Void, Never>?
+    private var presentedScreen: NSScreen?
+    private var updateScreen: ((NSScreen) -> Void)?
 
     func show(model: ZoneSelectionModel, screen: NSScreen, appName: String,
               isRegisteredShortcut: @escaping (Shortcut) -> Bool,
@@ -161,15 +163,7 @@ final class OverlayController {
               onFinish: @escaping () -> Void, onCancel: @escaping () -> Void) {
         dismiss()
         clearFeedback()
-        let available = screen.visibleFrame
-        let previewScale = min(620.0 / available.width, 0.60,
-            max(0.1, (available.height - 180) / available.height))
-        let gridWidth = available.width * previewScale
-        let gridHeight = available.height * previewScale
-        let width = gridWidth + 40
-        let height = gridHeight + 154
-        let frame = CGRect(x: available.midX - width / 2, y: available.midY - height / 2, width: width, height: height)
-        let window = ZonePanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        let window = ZonePanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         window.title = L10n.text("Tessera Zone Selector")
         window.isFloatingPanel = true
         window.becomesKeyOnlyIfNeeded = false
@@ -193,16 +187,24 @@ final class OverlayController {
         }
         window.onFinish = onFinish
         window.onCancel = onCancel
-        let hosting = NSHostingView(rootView: ZoneSelectorView(model: model,
-            appName: appName, displayName: screen.localizedName,
-            gridSize: CGSize(width: gridWidth, height: gridHeight),
-            maximizeShortcut: maximizeShortcut,
-            onMaximize: onMaximize,
-            onSelect: { onSelect($0, true) }))
-        window.contentView = hosting
-        let measuredHeight = ceil(hosting.fittingSize.height)
-        window.setFrame(CGRect(x: available.midX - width / 2, y: available.midY - measuredHeight / 2,
-            width: width, height: measuredHeight), display: false)
+        updateScreen = { [weak window] screen in
+            guard let window else { return }
+            let available = screen.visibleFrame
+            let previewScale = min(620.0 / available.width, 0.60,
+                max(0.1, (available.height - 180) / available.height))
+            let gridSize = CGSize(width: available.width * previewScale, height: available.height * previewScale)
+            let hosting = NSHostingView(rootView: ZoneSelectorView(model: model,
+                appName: appName, displayName: screen.localizedName, gridSize: gridSize,
+                maximizeShortcut: maximizeShortcut, onMaximize: onMaximize,
+                onSelect: { onSelect($0, true) }))
+            window.contentView = hosting
+            let width = gridSize.width + 40
+            let height = ceil(hosting.fittingSize.height)
+            window.setFrame(CGRect(x: available.midX - width / 2, y: available.midY - height / 2,
+                width: width, height: height), display: true)
+        }
+        updateScreen?(screen)
+        presentedScreen = screen
         panel = window
         onOutsideClick = onCancel
         // Observe only selector control keys while this panel is open. Never
@@ -233,6 +235,14 @@ final class OverlayController {
 
     func updateStatus(_ message: String) { model?.status = message }
 
+    /// Retain the key panel and its repeat state while following the destination.
+    func move(to screen: NSScreen) {
+        guard panel?.isVisible == true, presentedScreen != screen else { return }
+        clearFeedback()
+        updateScreen?(screen)
+        presentedScreen = screen
+    }
+
     func cancelDirectionalRepeat() { panel?.cancelDirectionalRepeat() }
 
     /// Hides keyboard UI while keeping outside-click cancellation active during drain.
@@ -257,6 +267,8 @@ final class OverlayController {
         hideForFinish()
         panel = nil
         model = nil
+        updateScreen = nil
+        presentedScreen = nil
     }
 
     func showFeedback(_ message: String, screen: NSScreen, duration: Duration = .seconds(4)) {
@@ -322,6 +334,7 @@ struct ZoneSelectorView: View {
         // Every button carries the layout that produced its visible number.
         // Queued navigation cannot reinterpret an already displayed zone.
         let displayedLayout = layout
+        let displayedScreenID = model.state.display?.id
         let selectedTarget = model.navigation.selectedTarget
         let highlightedZones = model.navigation.highlightedZoneIDs
         let isGrouped: Bool = if case .zone = selectedTarget { false } else { true }
@@ -356,7 +369,8 @@ struct ZoneSelectorView: View {
                                 selected: highlightedZones.contains(number),
                                 partOfGroup: isGrouped,
                                 language: language,
-                                onSelect: { onSelect(GridPlacement(layout: displayedLayout, target: .zone($0))) })
+                                onSelect: { onSelect(GridPlacement(layout: displayedLayout, target: .zone($0),
+                                    displayID: displayedScreenID)) })
                         }
                     }
                 }

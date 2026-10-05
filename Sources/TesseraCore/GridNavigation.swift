@@ -14,10 +14,14 @@ public enum PlacementTarget: Equatable, Sendable {
 public struct GridPlacement: Equatable, Sendable {
     public let layout: LayoutPreset
     public let target: PlacementTarget
+    /// Bound when a display-aware session submits the placement. Nil is only
+    /// used by display-independent navigation and previews.
+    public let displayID: UInt32?
 
-    public init(layout: LayoutPreset, target: PlacementTarget) {
+    public init(layout: LayoutPreset, target: PlacementTarget, displayID: UInt32? = nil) {
         self.layout = layout
         self.target = target
+        self.displayID = displayID
     }
 }
 
@@ -50,6 +54,8 @@ public struct GridNavigation: Equatable, Sendable {
     private struct InitialHorizontalTargets: Equatable, Sendable {
         let left: Int
         let right: Int
+        let crossesLeftEdge: Bool
+        let crossesRightEdge: Bool
     }
 
     private let candidates: [Candidate]
@@ -146,7 +152,9 @@ public struct GridNavigation: Equatable, Sendable {
         }
         initialHorizontalTargets = InitialHorizontalTargets(
             left: centers.lastIndex(where: { $0 < center }) ?? centers.count - 1,
-            right: centers.firstIndex(where: { $0 > center }) ?? 0
+            right: centers.firstIndex(where: { $0 > center }) ?? 0,
+            crossesLeftEdge: !centers.contains(where: { $0 < center }),
+            crossesRightEdge: !centers.contains(where: { $0 > center })
         )
     }
 
@@ -200,12 +208,27 @@ public struct GridNavigation: Equatable, Sendable {
         return closest
     }
 
+    /// Whether the next step would wrap horizontally or stop vertically.
+    /// An arbitrary window uses its original center for its first step.
+    public func isAtEdge(toward direction: GridDirection) -> Bool {
+        switch direction {
+        case .left:
+            !isScreenWidth && (initialHorizontalTargets?.crossesLeftEdge ?? (candidateIndex == 0))
+        case .right:
+            !isScreenWidth && (initialHorizontalTargets?.crossesRightEdge ?? (candidateIndex == candidates.count - 1))
+        case .up: height == .top
+        case .down: height == .bottom
+        }
+    }
+
     /// Horizontal movement follows candidate order, wraps, and retains height
     /// across layouts. Vertical movement follows top ↔ full ↔ bottom and stops
     /// at the ends. True means an accepted placement step, including the first
     /// move from an arbitrary window into its already highlighted candidate.
     @discardableResult
-    public mutating func move(_ direction: GridDirection) -> Bool {
+    /// Crossing into another display enters its opposite edge. Vertical moves
+    /// retain the selected column/layout or screen-wide state.
+    public mutating func move(_ direction: GridDirection, crossingDisplayBoundary: Bool = false) -> Bool {
         switch direction {
         case .left:
             if isScreenWidth {
@@ -225,7 +248,9 @@ public struct GridNavigation: Equatable, Sendable {
             isScreenWidth = false
         case .up:
             switch height {
-            case .top: return false
+            case .top:
+                guard crossingDisplayBoundary else { return false }
+                height = .bottom
             case .full: height = .top
             case .bottom: height = .full
             }
@@ -233,7 +258,9 @@ public struct GridNavigation: Equatable, Sendable {
             switch height {
             case .top: height = .full
             case .full: height = .bottom
-            case .bottom: return false
+            case .bottom:
+                guard crossingDisplayBoundary else { return false }
+                height = .top
             }
         }
         initialHorizontalTargets = nil

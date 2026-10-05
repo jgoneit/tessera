@@ -11,11 +11,11 @@
 <p align="center">
   <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="Latest release, including prereleases" /></a>
   <a href="docs/INSTALL.en.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 or later" /></a>
-  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.5"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.4/Tessera-0.1.0-alpha.4-arm64.dmg"><strong>Download alpha.4 DMG</strong></a> ·
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.5/Tessera-0.1.0-alpha.5-arm64.dmg"><strong>Download alpha.5 DMG</strong></a> ·
   <a href="https://jgoneit.github.io/tessera/?lang=en#demo"><strong>Try it in your browser</strong></a> ·
   <a href="docs/INSTALL.en.md">Installation guide</a>
 </p>
@@ -57,14 +57,20 @@ windows extending beyond the usable display area, and errors appear for about fo
 Unmodified arrow keys remain available to the original app.
 
 Left and right move through the centers of every column in the selected grids, ordered from left to right,
-and wrap around at either end. For example, selecting 2×2 and 3×2 gives this order:
+and continue at the opposite edge of a neighboring monitor when reaching an end. At the outer edge of the
+horizontal monitor arrangement, navigation wraps to the far opposite monitor: left from the leftmost column
+enters the rightmost monitor's last column, and right from the rightmost column enters the leftmost monitor's
+first column. With no horizontally separate monitor, navigation wraps within the current display.
+For example, selecting 2×2 and 3×2 gives this order:
 `3×2 column 1 → 2×2 column 1 → 3×2 column 2 → 2×2 column 2 → 3×2 column 3`.
 When navigation changes the grid, the window width changes to match it while retaining the top, full-column,
 or bottom height state. Up and down stay in the current grid and column.
 Tessera handles key repeat for left and right only, stopping when the key or a required modifier is released.
 Up and down advance one step per press: release and press again to reach the next state.
-They stop at the top and bottom states.
-With only 3×2 selected, starting at the middle column `(2·5)` and pressing
+At the top or bottom, another press enters the opposite half of a monitor in that direction, preserving the grid
+and column. Without a neighbor, it stops. Monitors follow the macOS arrangement: overlapping perpendicular spans
+take priority, diagonal monitors are a fallback, and the nearest edge wins among multiple candidates.
+On a single display with only 3×2 selected, starting at the middle column `(2·5)` and pressing
 `⌃⌥↑ → ⌃⌥→ → ⌃⌥→ → ⌃⌥↓` places the window at `2 → 3 → 1 → (1·4)`.
 A full column fills the gap between its two zones as one window while preserving the outer gaps.
 
@@ -80,6 +86,8 @@ Only maximization ignores Gap; the top and bottom screen halves retain the confi
 | Top half of screen | Stay | Maximize |
 | Bottom half of screen | Maximize | Stay |
 
+With a monitor above or below, `Stay` instead enters that monitor's opposite screen half.
+
 From these three states, left/right enters the nearest selected grid column in that direction from the screen center,
 keeping the height state. With 2×2+3×2 enabled, `⌃⌥←` from maximized enters the full left 2×2 column and `⌃⌥→`
 enters the full right 2×2 column. From the top screen half, `⌃⌥←` enters the top-left 2×2 cell. With all three grids,
@@ -87,6 +95,9 @@ the nearest columns are 4×2 columns 2 and 3. Grid navigation then continues nor
 into the horizontal cycle. Holding the maximize key runs it only once and stops any horizontal repeat.
 
 ## Zone picker in the menu
+
+When navigation crosses monitors, the picker follows the destination and updates its display name and preview.
+Numbers, clicks, and maximization use that destination display.
 
 **Arrange Window…** in the menu bar opens a picker showing the grid and zone numbers.
 Opening it alone does not move the window. The same window captured before the menu opened is used throughout.
@@ -142,7 +153,7 @@ selection to 3×2 only.
 
 ## Updates
 
-The current release is **0.1.0-alpha.4**. Settings displays the full release version.
+The current release is **0.1.0-alpha.5**. Settings displays the full release version.
 Choose **Check for Updates…** in the menu or Settings to check for a new version.
 
 - Automatic checking is on by default and runs once a day. You can turn it off in Settings and still check manually.
@@ -151,7 +162,7 @@ Choose **Check for Updates…** in the menu or Settings to check for a new versi
   and relaunches it. Downloads and installation require your action. Checking, up-to-date, and failed checks have distinct states;
   network errors do not interrupt window placement.
 - Alpha releases check for both alpha and stable updates. Your grids, spacing, language, theme, and shortcuts are preserved.
-- **alpha.3 and earlier have no updater. Install the alpha.4 DMG manually once to receive later updates inside the app.**
+- **alpha.3 and earlier have no updater. Install the alpha.5 DMG manually once to receive later updates inside the app.**
 
 Tessera's update information follows your app language; Sparkle's standard installation dialogs use macOS's preferred language.
 Updating an ad hoc app may require renewing Accessibility permission. See the
@@ -234,7 +245,7 @@ by locating the active compiler's bundle directory, without hard-coding user or 
 
 ## Window and display handling
 
-- Uses `NSScreen.visibleFrame` on the display with the largest overlap with the window, excluding the Dock and menu bar areas.
+- Starts on the display with the largest overlap with the window, then uses the destination display's `NSScreen.visibleFrame`, excluding the Dock and menu bar areas.
 - All coordinates use logical points. Pixel alignment uses the target display's backing scale.
 - AX's top-left coordinates and AppKit's bottom-left coordinates are always converted through the top of the reference display.
 - If the current window matches maximization, a top/bottom screen half, or the top/full/bottom frame of a selected grid column, navigation starts at that state.
@@ -243,14 +254,15 @@ by locating the active compiler's bundle directory, without hard-coding user or 
   advancing an extra step from the highlighted candidate. The first vertical input moves up or down from the highlighted full column.
 - Consecutive inputs for the same window preserve the logical navigation state and separately record the actual frame confirmed by AX.
   App size limits may make the actual frame differ from the request, but they do not reset the vertical navigation state.
-- If the window, display, selected grids, or gap changes, or the user manually moves or resizes the window, the next input checks
+- If the window, display configuration, selected grids, or gap changes, or the user manually moves or resizes the window, the next input checks
   the current window and frame again. Placement stops if the target window disappears or becomes invalid.
 - Direction and maximize inputs received while AX prepares the target are applied in order. Actual size and position writes run serially.
   After a placement in progress, only the latest pending destination is applied, so some intermediate positions may not appear onscreen.
 - If resizing at the current position would extend the requested frame beyond the screen, Tessera first moves the window once to make room.
   It adjusts the current origin to fit within the screen using the larger of the current and requested widths and heights.
   It then requests the size, reads the actual size, adjusts the final position, and reads the final frame.
-  There are at most three position/size writes, with target and cancellation checks before each write and no retries.
+  Ordinary placement uses at most three position/size writes. If the size differs just after crossing displays,
+  one additional size/position pass on the destination raises the limit to five. Every write rechecks target, cancellation, and permission.
 - If an app's minimum size or resize increments change the size but alignment succeeds, Tessera briefly shows
   “Arranged · Adjusted to app size.” Position mismatches and windows extending beyond the usable display area get separate notices.
   It does not report full containment when the window's minimum size is larger than the screen.

@@ -12,8 +12,8 @@ Requires macOS 14 or later. The default build targets **only the architecture of
 it does not produce a universal app or cross-compile. For example, an `arm64` app built on Apple Silicon has not thereby
 been verified to run on Intel Macs.
 
-The current release is **0.1.0-alpha.4**. Download
-[`Tessera-0.1.0-alpha.4-arm64.dmg`](https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.4/Tessera-0.1.0-alpha.4-arm64.dmg)
+The current release is **0.1.0-alpha.5**. Download
+[`Tessera-0.1.0-alpha.5-arm64.dmg`](https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.5/Tessera-0.1.0-alpha.5-arm64.dmg)
 for Apple Silicon. **If you use alpha.3 or earlier, install this DMG manually once to enable future updates inside the app.**
 
 ## Install the app directly
@@ -49,7 +49,7 @@ It does not install automatically or change permissions.
 ## Update Tessera
 
 Starting with alpha.4, use **Check for Updates…** in the menu or Settings.
-Settings shows the installed full release version, such as `0.1.0-alpha.4`.
+Settings shows the installed full release version, such as `0.1.0-alpha.5`.
 
 1. Choose **Check for Updates…**. Checking, up-to-date, and failed checks have distinct states.
 2. If a new version is available, read the version and changes, then choose **Install**.
@@ -89,6 +89,24 @@ half returns to maximized. **⌃⌥← / ⌃⌥→** enters a column in your sel
 Screen halves use your configured gap. If the maximize shortcut cannot be registered during migration, the existing
 direction shortcuts stay active and Settings shows a notice; the menu and button remain available.
 
+## Move across displays
+
+Direction shortcuts cross display boundaries following the arrangement in macOS. At the outer left or right
+edge, navigation wraps to the display at the opposite end: left from the leftmost display enters the last
+column of the rightmost display, and right from the rightmost enters the first column of the leftmost.
+A single display keeps its local horizontal wrap. Up and down stop when there is no neighbor in that direction.
+
+Placement uses the destination display's work area and scale. The “Arrange Window…” picker follows the
+destination; numbers, clicks, and Maximize apply there. An app's own minimum size can still constrain placement.
+Pending placements are cancelled when the display configuration changes; start arranging again afterward.
+
+## Restore a previous version
+
+If needed, quit Tessera and copy the app from the [previous release](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4)
+DMG, or restore a saved copy, then launch it. Keep your existing preferences. Renew Accessibility permission
+using the steps above if required. You can temporarily disable automatic update checks.
+The updater does not automatically install a lower build; a corrective release uses a higher build number.
+
 ## Create a local DMG
 
 Run this command from the repository root. By default, it builds the release app before packaging it.
@@ -104,7 +122,7 @@ bash scripts/build-dmg.sh --skip-build
 ```
 
 The filename comes from the app bundle's full release version and the executable's actual architecture.
-For example, release 0.1.0-alpha.4 with an arm64 executable produces `dist/Tessera-0.1.0-alpha.4-arm64.dmg`.
+For example, release 0.1.0-alpha.5 with an arm64 executable produces `dist/Tessera-0.1.0-alpha.5-arm64.dmg`.
 The script checks the app's code signature and repeats the check on the bundle copied to a temporary folder.
 It creates a UDZO compressed image with `hdiutil create`, checks the image checksum with `hdiutil verify`,
 then places it at the final path. An existing DMG with the same name is replaced only after the new image passes verification.

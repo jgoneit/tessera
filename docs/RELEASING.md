@@ -8,7 +8,7 @@ Tessera 업데이트 키가 저장된 로그인 키체인이 필요합니다.
 
 ## 버전과 서명 키
 
-- `Resources/Info.plist`의 `TesseraReleaseVersion`은 `0.1.0-alpha.4` 같은 표시 버전입니다.
+- `Resources/Info.plist`의 `TesseraReleaseVersion`은 `0.1.0-alpha.5` 같은 표시 버전입니다.
   Git 태그는 앞에 `v`를 붙이고, DMG 파일명에도 전체 표시 버전을 사용합니다.
 - `CFBundleShortVersionString`은 `0.1.0` 같은 기본 버전, `CFBundleVersion`은 계속 증가하는
   정수 빌드 번호입니다. 업데이트 순서는 빌드 번호로 판단하므로 새 릴리스에 이전 번호를 재사용하지 않습니다.
@@ -59,7 +59,7 @@ bash scripts/prepare-update.sh "$TESSERA_RELEASE_NOTES"
 - `build-app.sh`는 `dist/Tessera.app`에 실행 파일·리소스와 Sparkle 프레임워크·도우미를 묶습니다.
   내부 구성요소부터 ad hoc 서명하고, 아키텍처·링크·로딩 경로·설정을 검사합니다.
 - `build-dmg.sh --skip-build`는 검증한 번들을 다시 빌드하지 않고 포장합니다.
-  alpha.4 arm64의 결과는 `dist/Tessera-0.1.0-alpha.4-arm64.dmg`입니다.
+  alpha.5 arm64의 결과는 `dist/Tessera-0.1.0-alpha.5-arm64.dmg`입니다.
 - `prepare-update.sh <안내.md>`는 기존 키로 DMG와 업데이트 목록을 서명합니다.
   한영 안내를 목록에 포함하고, `website/appcast.xml`과 `dist/SHA256SUMS`를 생성합니다.
   현재 도구는 알파 채널의 전체 DMG를 배포하며 델타 업데이트를 만들지 않습니다.
@@ -71,7 +71,7 @@ bash scripts/prepare-update.sh "$TESSERA_RELEASE_NOTES"
 ```sh
 swift scripts/verify-update.swift \
   dist/Tessera.app/Contents/Info.plist website/appcast.xml \
-  dist/Tessera-0.1.0-alpha.4-arm64.dmg
+  dist/Tessera-0.1.0-alpha.5-arm64.dmg
 (cd dist && shasum -a 256 -c SHA256SUMS)
 node --test website/*.test.mjs
 node --check website/app.mjs
@@ -113,13 +113,13 @@ bash scripts/prepare-update-test.sh 8769
 
 1. 한영 README·설치 안내·웹페이지의 버전과 링크를 최종 파일명에 맞춥니다. 새 소스 변경·문서·서명된
    appcast를 목적별로 커밋하고 PR 검사 및 해당 Seal Task의 `verify`·반환된 Run ID의 `complete`를 수행합니다.
-2. **검증한 정확한 소스 커밋**으로 `v0.1.0-alpha.4` 같은 사전 릴리스를 만듭니다.
+2. **검증한 정확한 소스 커밋**으로 `v0.1.0-alpha.5` 같은 사전 릴리스를 만듭니다.
    최종 DMG와 `SHA256SUMS`를 첨부하고 기존 릴리스·자산은 보존합니다.
 3. 공개 URL에서 두 파일을 다시 내려받아 체크섬과 서명을 확인합니다. 아직 없는 자산을 가리키는 목록을 먼저 배포하지 않습니다.
 4. PR을 병합해 Pages를 배포하고 `https://jgoneit.github.io/tessera/appcast.xml`의 서명을 확인합니다.
    공개 한영 다운로드 링크와 설치본의 수동 업데이트 확인도 점검합니다.
 5. 실제 결과와 미검증 항목을 한영 검증 기록에 남깁니다. **alpha.3 이하에는 업데이터가 없으므로
-   업데이트를 받으려면 alpha.4를 한 번 직접 설치해야 한다**는 안내를 유지합니다.
+   업데이트를 받으려면 최신 DMG를 한 번 직접 설치해야 한다**는 안내를 유지합니다.
 
 최종 appcast는 서명 후 직접 수정해 배포하지 않습니다. 필요한 변경을 스테이징한 뒤 기존 키로 다시
 서명하고 공개키 검증을 통과한 파일만 배포합니다. 잘못된 업데이트는 해당 항목을 목록에서 철회한 뒤

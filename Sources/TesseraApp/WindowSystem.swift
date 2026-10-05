@@ -146,7 +146,8 @@ actor WindowSystem {
         return try readFrame(of: session.window)
     }
 
-    func place(target: WindowTarget, frame: CGRect, visibleFrame: CGRect) -> PlacementResult {
+    func place(target: WindowTarget, frame: CGRect, visibleFrame: CGRect,
+               retrySizeAfterMove: Bool = false) -> PlacementResult {
         guard let session = sessions[target.token], session.pid == target.pid else {
             return PlacementResult(outcome: .unavailable,
                 message: WindowSystemError.targetUnavailable.localizedDescription, actualFrame: nil)
@@ -154,6 +155,7 @@ actor WindowSystem {
         // The transaction stays synchronous on this actor; AX references never
         // escape. Every attempted write revalidates cancellation, focus and trust.
         return WindowPlacement.perform(frame: frame, visibleFrame: visibleFrame,
+            retrySizeAfterMove: retrySizeAfterMove,
             readFrame: { try self.readFrame(of: session.window) },
             validate: { try self.validateForMutation(session) },
             setSize: { try self.setSize($0, of: session.window) },

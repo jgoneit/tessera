@@ -56,8 +56,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
     @MainActor private final class SelectionSession {
         let id = UUID()
         let target: WindowTarget
-        let display: DisplayGeometry
-        let primaryTop: CGFloat
+        let screens: ScreenSnapshot
         let layouts: [LayoutPreset]
         let gap: Int
         let appName: String
@@ -65,18 +64,17 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         let model: ZoneSelectionModel
         var latestRequested: GridPlacement?
 
-        init(target: WindowTarget, display: DisplayGeometry, primaryTop: CGFloat,
+        init(target: WindowTarget, display: DisplayGeometry, screens: ScreenSnapshot,
              layouts: [LayoutPreset], gap: Int, appName: String, mode: Mode) {
             self.target = target
-            self.display = display
-            self.primaryTop = primaryTop
+            self.screens = screens
             self.layouts = layouts
             self.gap = gap
             self.appName = appName
             self.mode = mode
             var state = DirectNavigationState(layouts: layouts,
-                windowFrame: CoordinateSpace.flip(target.frame, primaryTop: primaryTop),
-                visibleFrame: display.visibleFrame, gap: CGFloat(gap), scale: display.scale)
+                windowFrame: CoordinateSpace.flip(target.frame, primaryTop: screens.primaryTop),
+                display: display, displays: screens.displays, gap: CGFloat(gap))
             state.record(actualFrame: target.frame)
             model = ZoneSelectionModel(state: state)
         }
@@ -357,14 +355,14 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
             }
             let selection: SelectionSession
             if let previous, session === previous, previous.mode == .direct,
-               previous.target.token == target.token, previous.display == display,
-               previous.primaryTop == screens.primaryTop, previous.layouts == preferences.enabledLayouts,
+               previous.target.token == target.token, previous.screens.matches(screens),
+               previous.layouts == preferences.enabledLayouts,
                previous.gap == preferences.gap,
                wasBusy || previous.model.state.matchesLastConfirmed(target.frame) {
                 selection = previous
             } else {
                 if previous != nil { shortcuts.cancelInput() }
-                selection = SelectionSession(target: target, display: display, primaryTop: screens.primaryTop,
+                selection = SelectionSession(target: target, display: display, screens: screens,
                     layouts: preferences.enabledLayouts, gap: preferences.gap, appName: app.localizedName ?? L10n.text("Window"), mode: .direct)
                 install(selection)
             }
@@ -413,7 +411,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
                 let frame = CoordinateSpace.flip(target.frame, primaryTop: screens.primaryTop)
                 guard let display = DisplaySelection.bestDisplay(for: frame, in: screens.displays),
                       let screen = ScreenCatalog.screen(id: display.id) else { throw WindowSystemError.invalidGeometry }
-                let selection = SelectionSession(target: target, display: display, primaryTop: screens.primaryTop,
+                let selection = SelectionSession(target: target, display: display, screens: screens,
                     layouts: preferences.enabledLayouts, gap: preferences.gap, appName: appName, mode: .selector)
                 install(selection)
                 selectorIsOpen = true
@@ -488,6 +486,9 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         statusMessage = L10n.format("Arranging %@…", destination.label)
         selection.model.status = statusMessage
         isWorking = true
+        if selectorIsOpen, let id = destination.displayID, let screen = ScreenCatalog.screen(id: id) {
+            overlay.move(to: screen)
+        }
         placementQueue.submit(destination)
         if close { finishSelection(selection) }
     }
@@ -513,19 +514,21 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
                 throw WindowSystemError.targetChanged
             }
             let screens = ScreenCatalog.snapshot()
-            let frame = CoordinateSpace.flip(currentFrame, primaryTop: screens.primaryTop)
-            guard let display = DisplaySelection.bestDisplay(for: frame, in: screens.displays),
-                  display == selection.display, screens.primaryTop == selection.primaryTop,
+            guard let display = screens.display(for: destination, captured: selection.screens),
+                  selection.model.state.matchesLastConfirmed(currentFrame),
                   preferences.enabledLayouts == selection.layouts,
                   selection.layouts.contains(destination.layout), preferences.gap == selection.gap else {
                 throw WindowSystemError.targetChanged
             }
             let desired = try GridGeometry.frame(in: display.visibleFrame, layout: destination.layout,
                 target: destination.target, gap: CGFloat(selection.gap), scale: display.scale)
+            let source = DisplaySelection.bestDisplay(
+                for: CoordinateSpace.flip(currentFrame, primaryTop: screens.primaryTop), in: screens.displays)
             try Task.checkCancellation()
             return await windows.place(target: selection.target,
                 frame: CoordinateSpace.flip(desired, primaryTop: screens.primaryTop),
-                visibleFrame: CoordinateSpace.flip(display.visibleFrame, primaryTop: screens.primaryTop))
+                visibleFrame: CoordinateSpace.flip(display.visibleFrame, primaryTop: screens.primaryTop),
+                retrySizeAfterMove: source?.id != display.id)
         } catch {
             return PlacementResult(outcome: .unavailable,
                 message: error is CancellationError ? L10n.text("Placement cancelled before resizing.") : UserFacingError.message(error),
@@ -536,7 +539,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
     private func receivedPlacement(_ result: PlacementResult, destination: GridPlacement, selection: SelectionSession) {
         log.notice("Placement result: \(destination.label, privacy: .public) — \(result.message, privacy: .public)")
         guard session === selection else {
-            if result.outcome == .failed, !stopping { showFeedback(result.message, screenID: selection.display.id) }
+            if result.outcome == .failed, !stopping { showFeedback(result.message, screenID: destination.displayID) }
             return
         }
         if let actual = result.actualFrame { selection.model.record(actualFrame: actual) }
@@ -544,7 +547,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
         case .failed, .unavailable:
             let report = result.outcome == .failed || placementQueue?.isCancelled != true
             cancelSelection(reason: "placement failed")
-            if report { showFeedback(result.message, screenID: selection.display.id) }
+            if report { showFeedback(result.message, screenID: destination.displayID) }
             refreshPermission()
         case .applied, .constrained:
             guard placementQueue?.isCancelled != true, selection.latestRequested == destination else { return }
@@ -554,7 +557,7 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
             statusMessage = message
             selection.model.status = message
             if !selectorIsOpen {
-                showFeedback(message, screenID: selection.display.id,
+                showFeedback(message, screenID: destination.displayID,
                     duration: result.feedbackDuration)
             }
         }

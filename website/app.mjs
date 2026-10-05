@@ -1,6 +1,6 @@
 import { createState, maximize, move, selectZone, setLayouts, selectedZones, frame } from './navigation.mjs?v=bd4bcbeb0add';
 
-import { resolveLanguage, t, translateDocument } from './i18n.mjs?v=f8406c83b071';
+import { resolveLanguage, t, translateDocument } from './i18n.mjs?v=54d722001ca8';
 
 const root = document.documentElement;
 const languageButton = document.querySelector('#languageToggleBtn');
