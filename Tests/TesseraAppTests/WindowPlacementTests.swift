@@ -315,6 +315,8 @@ struct WindowPlacementTests {
         #expect(window.frame == requested)
         #expect(window.resizeCount == 1)
         #expect(window.writes.count == (widens ? 3 : 2))
+        // The readback that proves the write is the stage result; nothing is read twice.
+        #expect(window.readCount == window.writes.count + 1)
         #expect(window.traces.map { $0.0 }.filter { $0 == "acceptedDespiteReply" }.count == 1)
         #expect(window.traces.last?.0 == "final")
     }
@@ -328,6 +330,7 @@ struct WindowPlacementTests {
         #expect(result.outcome == .applied)
         #expect(result.actualFrame == requested)
         #expect(window.writes.count == 3)
+        #expect(window.readCount == 4)
         #expect(window.traces.map { $0.0 }.filter { $0 == "acceptedDespiteReply" }.count == 2)
     }
 
@@ -336,15 +339,41 @@ struct WindowPlacementTests {
     func contradictoryReplyWithoutApplying(_ write: Int) throws {
         let window = try edgeWindow()
         // Write 1 makes room, write 2 resizes and write 3 moves.
-        window.errorsBeforeApplying = [write: WindowSystemError.accessibility(operation: "resize the window",
+        window.errorsBeforeApplying = [write: WindowSystemError.accessibility(
+            operation: write == 2 ? "resize the window" : "move the window",
             code: AXError.attributeUnsupported.rawValue)]
         let result = window.place(try frame(.twoByTwo, .column(2)))
         #expect(result.outcome == .failed)
         #expect(result.message.contains(L10n.text("The window may be partly arranged.")))
         #expect(window.writes.count == write)
-        // Every completed write is read back, then one evidence read and one diagnostic read.
-        #expect(window.readCount == write + 2)
+        // Every write is read back once; that readback is the reported result.
+        #expect(window.readCount == write + 1)
+        #expect(result.actualFrame == window.frame)
         #expect(!window.traces.contains { $0.0 == "acceptedDespiteReply" })
+    }
+
+    @Test("A refused write is not excused by the window drifting away from the request")
+    func driftAwayIsNotEvidence() throws {
+        let window = try edgeWindow()
+        window.errorsBeforeApplying = [2: WindowSystemError.accessibility(operation: "resize the window",
+            code: AXError.attributeUnsupported.rawValue)]
+        // Read 3 is the resize readback: the window shrank on its own.
+        window.readFrames = [3: try frame(.fourByTwo, .column(4))]
+        let result = window.place(try frame(.twoByTwo, .column(2)))
+        #expect(result.outcome == .failed)
+        #expect(window.writes.count == 2)
+    }
+
+    @Test("Evidence of a write requires moving toward the request without moving away on either axis",
+          arguments: [
+            (CGPoint(x: 100, y: 200), CGPoint(x: 0, y: 0), true),     // matches the request
+            (CGPoint(x: 100, y: 150), CGPoint(x: 0, y: 150), true),   // closer on x, unchanged y (app limit)
+            (CGPoint(x: 100, y: 100), CGPoint(x: 0, y: 150), false),  // closer on x, farther on y
+            (CGPoint(x: 0, y: 150), CGPoint(x: 0, y: 150), false),    // unchanged
+            (CGPoint(x: -50, y: 150), CGPoint(x: 0, y: 150), false),  // drifted away
+          ])
+    func movedTowardRule(_ actual: CGPoint, _ before: CGPoint, _ expected: Bool) {
+        #expect(WindowPlacement.movedToward(actual, from: before, to: CGPoint(x: 100, y: 200)) == expected)
     }
 
     @Test("Timeouts, other AX replies, permission and target errors from a setter stay terminal",
