@@ -1,3 +1,4 @@
+import ApplicationServices
 import CoreGraphics
 import Foundation
 import Testing
@@ -301,7 +302,94 @@ struct WindowPlacementTests {
         #expect(window.writes.isEmpty)
     }
 
-    @Test("Every setter failure is partial even if AX reports failure after applying the write",
+    @Test("A size change applied with an attribute-unsupported reply (Gemini) still lands exactly",
+          arguments: [false, true])
+    func contradictoryReplyAfterApplying(_ widens: Bool) throws {
+        let window = PlacementWindowFake(
+            frame: try frame(widens ? .threeByTwo : .twoByTwo, widens ? .column(3) : .column(1)), bounds: bounds)
+        window.sizeChangesReplyUnsupported = true
+        let requested = try frame(widens ? .twoByTwo : .threeByTwo, .column(2))
+        let result = window.place(requested)
+        #expect(result.outcome == .applied)
+        #expect(result.actualFrame == requested)
+        #expect(window.frame == requested)
+        #expect(window.resizeCount == 1)
+        #expect(window.writes.count == (widens ? 3 : 2))
+        // The readback that proves the write is the stage result; nothing is read twice.
+        #expect(window.readCount == window.writes.count + 1)
+        #expect(window.traces.map { $0.0 }.filter { $0 == "acceptedDespiteReply" }.count == 1)
+        #expect(window.traces.last?.0 == "final")
+    }
+
+    @Test("Position writes applied with an attribute-unsupported reply also land exactly")
+    func contradictoryPositionReplyAfterApplying() throws {
+        let window = try edgeWindow()
+        window.positionChangesReplyUnsupported = true
+        let requested = try frame(.twoByTwo, .column(2))
+        let result = window.place(requested)
+        #expect(result.outcome == .applied)
+        #expect(result.actualFrame == requested)
+        #expect(window.writes.count == 3)
+        #expect(window.readCount == 4)
+        #expect(window.traces.map { $0.0 }.filter { $0 == "acceptedDespiteReply" }.count == 2)
+    }
+
+    @Test("An attribute-unsupported reply to a write that changed nothing stays terminal",
+          arguments: [1, 2, 3])
+    func contradictoryReplyWithoutApplying(_ write: Int) throws {
+        let window = try edgeWindow()
+        // Write 1 makes room, write 2 resizes and write 3 moves.
+        window.errorsBeforeApplying = [write: WindowSystemError.accessibility(
+            operation: write == 2 ? "resize the window" : "move the window",
+            code: AXError.attributeUnsupported.rawValue)]
+        let result = window.place(try frame(.twoByTwo, .column(2)))
+        #expect(result.outcome == .failed)
+        #expect(result.message.contains(L10n.text("The window may be partly arranged.")))
+        #expect(window.writes.count == write)
+        // Every write is read back once; that readback is the reported result.
+        #expect(window.readCount == write + 1)
+        #expect(result.actualFrame == window.frame)
+        #expect(!window.traces.contains { $0.0 == "acceptedDespiteReply" })
+    }
+
+    @Test("A refused write is not excused by the window drifting away from the request")
+    func driftAwayIsNotEvidence() throws {
+        let window = try edgeWindow()
+        window.errorsBeforeApplying = [2: WindowSystemError.accessibility(operation: "resize the window",
+            code: AXError.attributeUnsupported.rawValue)]
+        // Read 3 is the resize readback: the window shrank on its own.
+        window.readFrames = [3: try frame(.fourByTwo, .column(4))]
+        let result = window.place(try frame(.twoByTwo, .column(2)))
+        #expect(result.outcome == .failed)
+        #expect(window.writes.count == 2)
+    }
+
+    @Test("Evidence of a write requires moving toward the request without moving away on either axis",
+          arguments: [
+            (CGPoint(x: 100, y: 200), CGPoint(x: 0, y: 0), true),     // matches the request
+            (CGPoint(x: 100, y: 150), CGPoint(x: 0, y: 150), true),   // closer on x, unchanged y (app limit)
+            (CGPoint(x: 100, y: 100), CGPoint(x: 0, y: 150), false),  // closer on x, farther on y
+            (CGPoint(x: 0, y: 150), CGPoint(x: 0, y: 150), false),    // unchanged
+            (CGPoint(x: -50, y: 150), CGPoint(x: 0, y: 150), false),  // drifted away
+          ])
+    func movedTowardRule(_ actual: CGPoint, _ before: CGPoint, _ expected: Bool) {
+        #expect(WindowPlacement.movedToward(actual, from: before, to: CGPoint(x: 100, y: 200)) == expected)
+    }
+
+    @Test("Timeouts, other AX replies, permission and target errors from a setter stay terminal",
+          arguments: [WindowSystemError.accessibility(operation: "resize the window", code: AXError.cannotComplete.rawValue),
+                      .accessibility(operation: "resize the window", code: AXError.failure.rawValue),
+                      .permissionRequired, .targetUnavailable])
+    func otherSetterErrorsStayTerminal(_ error: WindowSystemError) throws {
+        let window = try edgeWindow()
+        window.errorsBeforeApplying = [2: error]
+        let result = window.place(try frame(.twoByTwo, .column(2)))
+        #expect(result.outcome == .failed)
+        #expect(result.message.contains(L10n.text("The window may be partly arranged.")))
+        #expect(window.writes.count == 2)
+    }
+
+    @Test("Other setter failures are partial even if AX reports failure after applying the write",
           arguments: [1, 2, 3])
     func setterFailure(_ write: Int) throws {
         let window = try edgeWindow()
@@ -390,6 +478,13 @@ private final class PlacementWindowFake {
     var cancelOnValidation: Int?
     var cancelAfterWrite: Int?
     var failWrite: Int?
+    /// Write number → error thrown before the write changes anything.
+    var errorsBeforeApplying: [Int: Error] = [:]
+    /// Gemini: every size write that changes the size is applied, then
+    /// replies attribute-unsupported.
+    var sizeChangesReplyUnsupported = false
+    /// The same apply-then-reply behavior for position writes.
+    var positionChangesReplyUnsupported = false
     var failReads: Set<Int> = []
     var invalidRead: Int?
     var readOffsets: [Int: CGPoint] = [:]
@@ -435,17 +530,26 @@ private final class PlacementWindowFake {
         writes.append(.size(size))
         events.append("size")
         resizeCount += 1
+        if let error = errorsBeforeApplying[writes.count] { throw error }
+        let previous = frame.size
         frame.size = CGSize(
             width: max(minimumSize.width, min(size.width, bounds.maxX - frame.minX)),
             height: max(minimumSize.height, min(size.height, bounds.maxY - frame.minY))
         )
+        // Injected cancellation and failures still apply to replying writes.
         try afterWrite()
+        if sizeChangesReplyUnsupported, frame.size != previous {
+            throw WindowSystemError.accessibility(operation: "resize the window",
+                code: AXError.attributeUnsupported.rawValue)
+        }
     }
 
     func setPosition(_ origin: CGPoint) throws {
         writes.append(.position(origin))
         events.append("position")
         positionCount += 1
+        if let error = errorsBeforeApplying[writes.count] { throw error }
+        let previous = frame.origin
         if !(ignoreFirstPosition && positionCount == 1) {
             frame.origin = CGPoint(
                 x: max(bounds.minX, min(origin.x, bounds.maxX - frame.width)),
@@ -453,6 +557,10 @@ private final class PlacementWindowFake {
             )
         }
         try afterWrite()
+        if positionChangesReplyUnsupported, frame.origin != previous {
+            throw WindowSystemError.accessibility(operation: "move the window",
+                code: AXError.attributeUnsupported.rawValue)
+        }
     }
 
     private func afterWrite() throws {
