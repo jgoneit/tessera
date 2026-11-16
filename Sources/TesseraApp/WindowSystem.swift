@@ -147,22 +147,43 @@ actor WindowSystem {
     }
 
     func place(target: WindowTarget, frame: CGRect, visibleFrame: CGRect,
-               retrySizeAfterMove: Bool = false) -> PlacementResult {
+               retrySizeAfterMove: Bool = false,
+               suspendEnhancedUserInterface: Bool = false) -> PlacementResult {
         guard let session = sessions[target.token], session.pid == target.pid else {
             return PlacementResult(outcome: .unavailable,
                 message: WindowSystemError.targetUnavailable.localizedDescription, actualFrame: nil)
         }
         // The transaction stays synchronous on this actor; AX references never
         // escape. Every attempted write revalidates cancellation, focus and trust.
-        return WindowPlacement.perform(frame: frame, visibleFrame: visibleFrame,
-            retrySizeAfterMove: retrySizeAfterMove,
-            readFrame: { try self.readFrame(of: session.window) },
-            validate: { try self.validateForMutation(session) },
-            setSize: { try self.setSize($0, of: session.window) },
-            setPosition: { try self.setPosition($0, of: session.window) },
-            trace: { stage, observed in
-                self.log.notice("AX frame \(stage, privacy: .public): pid=\(session.pid) x=\(Double(observed.minX)) y=\(Double(observed.minY)) width=\(Double(observed.width)) height=\(Double(observed.height))")
-            })
+        let transaction = {
+            WindowPlacement.perform(frame: frame, visibleFrame: visibleFrame,
+                retrySizeAfterMove: retrySizeAfterMove,
+                readFrame: { try self.readFrame(of: session.window) },
+                validate: { try self.validateForMutation(session) },
+                setSize: { try self.setSize($0, of: session.window) },
+                setPosition: { try self.setPosition($0, of: session.window) },
+                trace: { stage, observed in
+                    self.log.notice("AX frame \(stage, privacy: .public): pid=\(session.pid) x=\(Double(observed.minX)) y=\(Double(observed.minY)) width=\(Double(observed.width)) height=\(Double(observed.height))")
+                })
+        }
+        guard suspendEnhancedUserInterface else { return transaction() }
+        // Restoration follows the final readback on every path, including
+        // failures and cancellation, so each reported frame is a settled one.
+        return EnhancedUserInterface.withSuspended(
+            read: { try? self.boolAttribute(EnhancedUserInterface.attribute, of: session.application) },
+            write: { self.setEnhancedUserInterface($0, of: session) },
+            body: transaction)
+    }
+
+    private func setEnhancedUserInterface(_ enabled: Bool, of session: Session) {
+        let error = AXUIElementSetAttributeValue(session.application,
+            EnhancedUserInterface.attribute as CFString, enabled ? kCFBooleanTrue : kCFBooleanFalse)
+        let change = enabled ? "restore" : "suspend"
+        if error == .success {
+            log.notice("AXEnhancedUserInterface \(change, privacy: .public): pid=\(session.pid)")
+        } else {
+            log.error("AXEnhancedUserInterface \(change, privacy: .public) failed: pid=\(session.pid) code=\(error.rawValue)")
+        }
     }
 
     private func configureTimeout(for element: AXUIElement) throws {
