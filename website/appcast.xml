@@ -78,7 +78,7 @@ To restore, quit Tessera and reinstall from the [alpha.5](https://github.com/jgo
 DMG or a saved app. Keep your preferences and renew Accessibility permission if needed.
 The updater does not automatically downgrade.
 </description>
-            <enclosure url="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.6/Tessera-0.1.0-alpha.6-arm64.dmg" length="3313222" type="application/octet-stream" sparkle:edSignature="wnWX/SxY5ZJ88j7zxdKXNQ4EnW13tq88UOTZhI3ApF2EzDwTK4B6KT8d9GZqvPofwV5/AIr/EYRpH5UL+rZFDw=="></enclosure>
+            <enclosure url="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.6/Tessera-0.1.0-alpha.6-arm64.dmg" length="3270814" type="application/octet-stream" sparkle:edSignature="M9mtT0rUJHxJjPYaB+8yBlpd3+qkONUqEpbfQXcaI/bESpQraHISArGURaU6D7IeH7+DDmM2Z45om6QIpIaKBA=="></enclosure>
         </item>
         <item>
             <title>Tessera 0.1.0-alpha.5</title>
@@ -195,6 +195,6 @@ Apple Silicon · macOS 14+ · ad hoc signed, not notarized.
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: FfbHuXp8fiXgKqYINyuQuN6HLAD+7ymcnfA/UJ4pSyS29rk+PQUKC2RKbNuCsVpc2XbE/6HYzYWbxBCXsR3LDA==
+edSignature: 0ZIcUHGyG/RS0yi5YzK3YD1adsDZnlFc8MtYNAiooXB745M/NVFyyH7FJ2alJ1+VfWeIiauPbv5/Z9hZXl0FAg==
 length: 13796
 -->
