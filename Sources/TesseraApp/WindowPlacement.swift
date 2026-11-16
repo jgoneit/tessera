@@ -18,6 +18,8 @@ enum WindowPlacement {
         var attemptedWrite = false
         var failedRead = false
         var observedFrame: CGRect?
+        // The latest successful readback, kept across writes as their baseline.
+        var lastRead: CGRect?
         var operation = "checking the window"
 
         func validateBeforeWrite() throws {
@@ -28,14 +30,35 @@ enum WindowPlacement {
             try Task.checkCancellation()
         }
 
-        /// A readback always follows each write and decides what was applied,
-        /// so a contradictory reply neither stops nor repeats the transaction.
-        func write(_ apply: () throws -> Void) throws {
+        /// Validation has just confirmed that the attribute is settable, yet
+        /// some apps apply a write and still reply attribute-unsupported
+        /// (Gemini does for every size change). Such a reply is accepted only
+        /// when an immediate readback shows the write took effect: the value
+        /// matches the request, or it changed from the previous readback even
+        /// if the app constrained it. A refused write changes nothing and, like
+        /// an unreadable one, stays terminal; nothing is written again.
+        func write(_ apply: () throws -> Void, tookEffect: (CGRect) -> Bool) throws {
             do {
                 try apply()
-            } catch let error as WindowSystemError where error.isContradictoryWriteReply {
-                return
+            } catch let error as WindowSystemError where error.isAttributeUnsupported {
+                guard let actual = try? readFrame(), isValid(actual), tookEffect(actual) else { throw error }
+                trace("acceptedDespiteReply", actual)
             }
+        }
+        func near(_ a: CGPoint, _ b: CGPoint) -> Bool { abs(a.x - b.x) <= 0.5 && abs(a.y - b.y) <= 0.5 }
+        func resize(_ size: CGSize) throws {
+            let before = lastRead.map { CGPoint(x: $0.width, y: $0.height) }
+            let requested = CGPoint(x: size.width, y: size.height)
+            try write({ try setSize(size) }, tookEffect: {
+                let actual = CGPoint(x: $0.width, y: $0.height)
+                return near(actual, requested) || before.map { !near(actual, $0) } == true
+            })
+        }
+        func move(_ origin: CGPoint) throws {
+            let before = lastRead?.origin
+            try write({ try setPosition(origin) }, tookEffect: { actual in
+                near(actual.origin, origin) || before.map { !near(actual.origin, $0) } == true
+            })
         }
 
         func observe(_ stage: String) throws -> CGRect {
@@ -45,6 +68,7 @@ enum WindowPlacement {
                 let actual = try readFrame()
                 guard isValid(actual) else { throw WindowSystemError.invalidGeometry }
                 observedFrame = actual
+                lastRead = actual
                 trace(stage, actual)
                 return actual
             } catch {
@@ -72,7 +96,7 @@ enum WindowPlacement {
                 attemptedWrite = true
                 observedFrame = nil
                 operation = "preparing room for the resize"
-                try write { try setPosition(origin) }
+                try move(origin)
                 operation = "reading the preparation move result"
                 _ = try observe("prepared")
             }
@@ -82,7 +106,7 @@ enum WindowPlacement {
             attemptedWrite = true
             observedFrame = nil
             operation = "resizing the window"
-            try write { try setSize(frame.size) }
+            try resize(frame.size)
             operation = "reading the resize result"
             let resized = try observe("resized")
 
@@ -96,7 +120,7 @@ enum WindowPlacement {
             attemptedWrite = true
             observedFrame = nil
             operation = "moving the resized window"
-            try write { try setPosition(origin) }
+            try move(origin)
             operation = "reading the final window frame"
             var actual = try observe("final")
 
@@ -108,15 +132,15 @@ enum WindowPlacement {
                 try validateBeforeWrite()
                 observedFrame = nil
                 operation = "resizing the window"
-                try write { try setSize(frame.size) }
+                try resize(frame.size)
                 operation = "reading the resize result"
                 let retried = try observe("resizedAfterDisplayMove")
                 operation = "checking the window before the final move"
                 try validateBeforeWrite()
                 observedFrame = nil
                 operation = "moving the resized window"
-                try write { try setPosition(PlacementGeometry.clampedOrigin(
-                    for: retried.size, desiredOrigin: frame.origin, in: visibleFrame)) }
+                try move(PlacementGeometry.clampedOrigin(
+                    for: retried.size, desiredOrigin: frame.origin, in: visibleFrame))
                 operation = "reading the final window frame"
                 actual = try observe("final")
             }

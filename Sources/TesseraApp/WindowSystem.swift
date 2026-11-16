@@ -81,12 +81,9 @@ enum WindowSystemError: Error, LocalizedError, Sendable {
         }
     }
 
-    /// Validation confirmed that position and size are settable immediately
-    /// before every write, so an attribute-unsupported reply to that write
-    /// contradicts the application's own report. Gemini returns it for every
-    /// size change it applies. Only this reply defers to the following
-    /// readback; timeouts, permission and target errors remain terminal.
-    var isContradictoryWriteReply: Bool {
+    /// An attribute-unsupported reply. `WindowPlacement` accepts it after a
+    /// write only when a readback proves the write took effect.
+    var isAttributeUnsupported: Bool {
         if case .accessibility(_, let code) = self { return code == AXError.attributeUnsupported.rawValue }
         return false
     }
@@ -323,20 +320,14 @@ actor WindowSystem {
         var size = size
         guard let value = AXValueCreate(.cgSize, &size) else { throw WindowSystemError.invalidGeometry }
         let error = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, value)
-        guard error == .success else {
-            log.notice("AX size write replied code=\(error.rawValue)")
-            throw axError(error, operation: "resize the window")
-        }
+        guard error == .success else { throw axError(error, operation: "resize the window") }
     }
 
     private func setPosition(_ origin: CGPoint, of window: AXUIElement) throws {
         var origin = origin
         guard let value = AXValueCreate(.cgPoint, &origin) else { throw WindowSystemError.invalidGeometry }
         let error = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, value)
-        guard error == .success else {
-            log.notice("AX position write replied code=\(error.rawValue)")
-            throw axError(error, operation: "move the window")
-        }
+        guard error == .success else { throw axError(error, operation: "move the window") }
     }
 
     private func axError(_ error: AXError, operation: String) -> WindowSystemError {
