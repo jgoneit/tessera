@@ -11,11 +11,11 @@
 <p align="center">
   <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="최신 릴리스 (사전 릴리스 포함)" /></a>
   <a href="docs/INSTALL.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 이상" /></a>
-  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.5"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.6"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.5/Tessera-0.1.0-alpha.5-arm64.dmg"><strong>alpha.5 DMG 다운로드</strong></a> ·
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.6/Tessera-0.1.0-alpha.6-arm64.dmg"><strong>alpha.6 DMG 다운로드</strong></a> ·
   <a href="https://jgoneit.github.io/tessera/?lang=ko#demo"><strong>웹에서 직접 체험</strong></a> ·
   <a href="docs/INSTALL.md">설치 안내</a>
 </p>
@@ -143,7 +143,7 @@ Esc는 녹화를 취소합니다. 두 동작의 키를 맞바꾸려면 두 draft
 
 ## 업데이트
 
-현재 릴리스는 **0.1.0-alpha.5**입니다. 앱 설정에도 전체 릴리스 버전을 표시합니다.
+현재 릴리스는 **0.1.0-alpha.6**입니다. 앱 설정에도 전체 릴리스 버전을 표시합니다.
 메뉴나 설정에서 **업데이트 확인 / Check for Updates…**를 눌러 새 버전을 확인할 수 있습니다.
 
 - 자동 확인은 기본으로 켜져 있으며 하루 한 번 확인합니다. 설정에서 끌 수 있고 수동 확인은 계속 사용할 수 있습니다.
@@ -151,7 +151,7 @@ Esc는 녹화를 취소합니다. 두 동작의 키를 맞바꾸려면 두 draft
 - 안내를 눌러 버전과 변경 내용을 확인하고 **설치**를 선택하면 다운로드·검증·앱 교체·재실행을 진행합니다.
   자동 다운로드나 무인 설치는 하지 않습니다. 확인 중·최신 버전·확인 실패를 구분하며, 네트워크 오류가 창 배치를 중단하지 않습니다.
 - 알파 버전은 알파와 정식 업데이트를 확인합니다. 격자·간격·언어·테마·단축키 설정은 유지됩니다.
-- **alpha.3 이하에는 업데이터가 없습니다. alpha.5 DMG를 한 번 직접 설치한 뒤부터 앱 안에서 업데이트할 수 있습니다.**
+- **alpha.3 이하에는 업데이터가 없습니다. alpha.6 DMG를 한 번 직접 설치한 뒤부터 앱 안에서 업데이트할 수 있습니다.**
 
 업데이트 안내는 Tessera의 선택 언어를 따르며, Sparkle 기본 설치 창은 macOS의 선호 언어를 사용합니다.
 ad hoc 서명 앱은 업데이트 후 손쉬운 사용 권한을 다시 허용해야 할 수 있습니다.
