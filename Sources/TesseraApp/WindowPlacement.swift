@@ -28,6 +28,16 @@ enum WindowPlacement {
             try Task.checkCancellation()
         }
 
+        /// A readback always follows each write and decides what was applied,
+        /// so a contradictory reply neither stops nor repeats the transaction.
+        func write(_ apply: () throws -> Void) throws {
+            do {
+                try apply()
+            } catch let error as WindowSystemError where error.isContradictoryWriteReply {
+                return
+            }
+        }
+
         func observe(_ stage: String) throws -> CGRect {
             // A failed read must never expose an older frame as the new result.
             observedFrame = nil
@@ -62,7 +72,7 @@ enum WindowPlacement {
                 attemptedWrite = true
                 observedFrame = nil
                 operation = "preparing room for the resize"
-                try setPosition(origin)
+                try write { try setPosition(origin) }
                 operation = "reading the preparation move result"
                 _ = try observe("prepared")
             }
@@ -72,7 +82,7 @@ enum WindowPlacement {
             attemptedWrite = true
             observedFrame = nil
             operation = "resizing the window"
-            try setSize(frame.size)
+            try write { try setSize(frame.size) }
             operation = "reading the resize result"
             let resized = try observe("resized")
 
@@ -86,7 +96,7 @@ enum WindowPlacement {
             attemptedWrite = true
             observedFrame = nil
             operation = "moving the resized window"
-            try setPosition(origin)
+            try write { try setPosition(origin) }
             operation = "reading the final window frame"
             var actual = try observe("final")
 
@@ -98,15 +108,15 @@ enum WindowPlacement {
                 try validateBeforeWrite()
                 observedFrame = nil
                 operation = "resizing the window"
-                try setSize(frame.size)
+                try write { try setSize(frame.size) }
                 operation = "reading the resize result"
                 let retried = try observe("resizedAfterDisplayMove")
                 operation = "checking the window before the final move"
                 try validateBeforeWrite()
                 observedFrame = nil
                 operation = "moving the resized window"
-                try setPosition(PlacementGeometry.clampedOrigin(
-                    for: retried.size, desiredOrigin: frame.origin, in: visibleFrame))
+                try write { try setPosition(PlacementGeometry.clampedOrigin(
+                    for: retried.size, desiredOrigin: frame.origin, in: visibleFrame)) }
                 operation = "reading the final window frame"
                 actual = try observe("final")
             }
