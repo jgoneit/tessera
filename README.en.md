@@ -11,11 +11,11 @@
 <p align="center">
   <a href="https://github.com/jgoneit/tessera/releases"><img src="https://img.shields.io/github/v/release/jgoneit/tessera?include_prereleases&amp;display_name=tag&amp;label=release&amp;color=587BF5" alt="Latest release, including prereleases" /></a>
   <a href="docs/INSTALL.en.md"><img src="https://img.shields.io/badge/macOS-14%2B-555555?logo=apple&amp;logoColor=white" alt="macOS 14 or later" /></a>
-  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.6"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
+  <a href="https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.7"><img src="https://img.shields.io/badge/Apple_Silicon-arm64-7C5CFC" alt="Apple Silicon arm64" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.6/Tessera-0.1.0-alpha.6-arm64.dmg"><strong>Download alpha.6 DMG</strong></a> ·
+  <a href="https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.7/Tessera-0.1.0-alpha.7-arm64.dmg"><strong>Download alpha.7 DMG</strong></a> ·
   <a href="https://jgoneit.github.io/tessera/?lang=en#demo"><strong>Try it in your browser</strong></a> ·
   <a href="docs/INSTALL.en.md">Installation guide</a>
 </p>
@@ -153,7 +153,7 @@ selection to 3×2 only.
 
 ## Updates
 
-The current release is **0.1.0-alpha.6**. Settings displays the full release version.
+The current release is **0.1.0-alpha.7**. Settings displays the full release version.
 Choose **Check for Updates…** in the menu or Settings to check for a new version.
 
 - Automatic checking is on by default and runs once a day. You can turn it off in Settings and still check manually.
@@ -162,7 +162,7 @@ Choose **Check for Updates…** in the menu or Settings to check for a new versi
   and relaunches it. Downloads and installation require your action. Checking, up-to-date, and failed checks have distinct states;
   network errors do not interrupt window placement.
 - Alpha releases check for both alpha and stable updates. Your grids, spacing, language, theme, and shortcuts are preserved.
-- **alpha.3 and earlier have no updater. Install the alpha.6 DMG manually once to receive later updates inside the app.**
+- **alpha.3 and earlier have no updater. Install the alpha.7 DMG manually once to receive later updates inside the app.**
 
 Tessera's update information follows your app language; Sparkle's standard installation dialogs use macOS's preferred language.
 Updating an ad hoc app may require renewing Accessibility permission. See the

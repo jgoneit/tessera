@@ -80,6 +80,13 @@ enum WindowSystemError: Error, LocalizedError, Sendable {
             L10n.format("Could not %@ through Accessibility (%ld).", L10n.text(operation), Int(code))
         }
     }
+
+    /// An attribute-unsupported reply. `WindowPlacement` accepts it after a
+    /// write only when a readback proves the write took effect.
+    var isAttributeUnsupported: Bool {
+        if case .accessibility(_, let code) = self { return code == AXError.attributeUnsupported.rawValue }
+        return false
+    }
 }
 
 /// Synchronous AX IPC runs on this actor's executor, never on the UI main actor.

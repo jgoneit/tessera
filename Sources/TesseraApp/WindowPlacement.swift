@@ -43,6 +43,42 @@ enum WindowPlacement {
             }
         }
 
+        /// Writes, then reads the result back as `stage`. Validation has just
+        /// confirmed that the attribute is settable, yet some apps apply a write
+        /// and still reply attribute-unsupported (Gemini does for every size
+        /// change). That reply is accepted only when the readback shows the
+        /// write moved the window toward the request; otherwise it stays
+        /// terminal with that readback as its result. Nothing is written again.
+        func write(_ apply: () throws -> Void, reading: String, stage: String,
+                   progressed: (CGRect) -> Bool) throws -> CGRect {
+            let writing = operation
+            do {
+                try apply()
+            } catch let error as WindowSystemError where error.isAttributeUnsupported {
+                operation = reading
+                let actual = try observe(stage)
+                guard progressed(actual) else {
+                    operation = writing
+                    throw error
+                }
+                trace("acceptedDespiteReply", actual)
+                return actual
+            }
+            operation = reading
+            return try observe(stage)
+        }
+        func resize(to size: CGSize, from before: CGRect, stage: String) throws -> CGRect {
+            try write({ try setSize(size) }, reading: "reading the resize result", stage: stage) {
+                movedToward(CGPoint(x: $0.width, y: $0.height), from: CGPoint(x: before.width, y: before.height),
+                    to: CGPoint(x: size.width, y: size.height))
+            }
+        }
+        func move(to origin: CGPoint, from before: CGRect, reading: String, stage: String) throws -> CGRect {
+            try write({ try setPosition(origin) }, reading: reading, stage: stage) {
+                movedToward($0.origin, from: before.origin, to: origin)
+            }
+        }
+
         do {
             guard isValid(frame), isValid(visibleFrame), contains(frame, in: visibleFrame) else {
                 throw WindowSystemError.invalidGeometry
@@ -51,6 +87,7 @@ enum WindowPlacement {
             try validateBeforeWrite()
             operation = "reading the initial window frame"
             let initial = try observe("initial")
+            var current = initial
 
             if let origin = PlacementGeometry.preparationOrigin(
                 currentFrame: initial, requestedFrame: frame, in: visibleFrame
@@ -62,9 +99,8 @@ enum WindowPlacement {
                 attemptedWrite = true
                 observedFrame = nil
                 operation = "preparing room for the resize"
-                try setPosition(origin)
-                operation = "reading the preparation move result"
-                _ = try observe("prepared")
+                current = try move(to: origin, from: initial,
+                    reading: "reading the preparation move result", stage: "prepared")
             }
 
             operation = "checking the window before resizing"
@@ -72,9 +108,7 @@ enum WindowPlacement {
             attemptedWrite = true
             observedFrame = nil
             operation = "resizing the window"
-            try setSize(frame.size)
-            operation = "reading the resize result"
-            let resized = try observe("resized")
+            let resized = try resize(to: frame.size, from: current, stage: "resized")
 
             // Always use the size the application actually accepted. This is
             // AX top-left space; oversized windows remain anchored at minY.
@@ -86,9 +120,8 @@ enum WindowPlacement {
             attemptedWrite = true
             observedFrame = nil
             operation = "moving the resized window"
-            try setPosition(origin)
-            operation = "reading the final window frame"
-            var actual = try observe("final")
+            var actual = try move(to: origin, from: resized,
+                reading: "reading the final window frame", stage: "final")
 
             // Some applications use their previous display's size limit until
             // the final move is processed. Retry once only when crossing screens;
@@ -98,17 +131,14 @@ enum WindowPlacement {
                 try validateBeforeWrite()
                 observedFrame = nil
                 operation = "resizing the window"
-                try setSize(frame.size)
-                operation = "reading the resize result"
-                let retried = try observe("resizedAfterDisplayMove")
+                let retried = try resize(to: frame.size, from: actual, stage: "resizedAfterDisplayMove")
                 operation = "checking the window before the final move"
                 try validateBeforeWrite()
                 observedFrame = nil
                 operation = "moving the resized window"
-                try setPosition(PlacementGeometry.clampedOrigin(
-                    for: retried.size, desiredOrigin: frame.origin, in: visibleFrame))
-                operation = "reading the final window frame"
-                actual = try observe("final")
+                actual = try move(to: PlacementGeometry.clampedOrigin(
+                    for: retried.size, desiredOrigin: frame.origin, in: visibleFrame), from: retried,
+                    reading: "reading the final window frame", stage: "final")
             }
 
             if PlacementResult.matchesRequestedFrame(actual, frame), contains(actual, in: visibleFrame) {
@@ -156,6 +186,17 @@ enum WindowPlacement {
                 message: L10n.format("Placement stopped while %@. The window may be partly arranged. %@", L10n.text(operation), detail),
                 actualFrame: observedFrame)
         }
+    }
+
+    /// True when `actual` matches `target`, or is closer to it than `before`
+    /// on at least one axis without moving away on either. Drift away from
+    /// the request is never taken as evidence that a write took effect.
+    static func movedToward(_ actual: CGPoint, from before: CGPoint, to target: CGPoint) -> Bool {
+        let tolerance: CGFloat = 0.5
+        let axes = [(abs(actual.x - target.x), abs(before.x - target.x)),
+                    (abs(actual.y - target.y), abs(before.y - target.y))]
+        if axes.allSatisfy({ $0.0 <= tolerance }) { return true }
+        return axes.allSatisfy { $0.0 <= $0.1 + tolerance } && axes.contains { $0.0 < $0.1 - tolerance }
     }
 
     private static func isValid(_ frame: CGRect) -> Bool {
