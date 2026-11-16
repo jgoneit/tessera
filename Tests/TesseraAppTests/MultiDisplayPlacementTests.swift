@@ -1,3 +1,4 @@
+import ApplicationServices
 import CoreGraphics
 import Testing
 import TesseraCore
@@ -231,6 +232,38 @@ struct MultiDisplayPlacementTests {
         #expect(result.outcome == (permanentConstraint ? .constrained : .applied))
         #expect(result.actualFrame == (permanentConstraint
             ? CGRect(x: -1706, y: 30, width: 1706, height: 952) : desired))
+    }
+
+    @Test("Gemini's attribute-unsupported size replies are accepted on the cross-display retry too",
+          arguments: [true, false])
+    func retryAcceptsAppliedAttributeUnsupportedReplies(_ retryApplies: Bool) {
+        let desired = CGRect(x: -1706, y: 30, width: 1706, height: 2130)
+        let visible = CGRect(x: -5120, y: 30, width: 5120, height: 2130)
+        var actual = CGRect(x: 0, y: 33, width: 594, height: 949)
+        var sizes = 0
+        var positions = 0
+        let unsupported = WindowSystemError.accessibility(operation: "resize the window",
+            code: AXError.attributeUnsupported.rawValue)
+        let result = WindowPlacement.perform(frame: desired, visibleFrame: visible, retrySizeAfterMove: true,
+            readFrame: { actual }, validate: {},
+            setSize: { size in
+                sizes += 1
+                // The first resize keeps the stale source-display height limit.
+                if sizes == 1 { actual.size = CGSize(width: size.width, height: min(size.height, 952)) }
+                else if retryApplies { actual.size = size }
+                throw unsupported
+            }, setPosition: { actual.origin = $0; positions += 1 })
+        #expect(sizes == 2)
+        if retryApplies {
+            #expect(positions == 3)
+            #expect(result.outcome == .applied)
+            #expect(result.actualFrame == desired)
+        } else {
+            // The first reply is accepted only because its width took effect;
+            // the refused retry changed nothing and stays terminal.
+            #expect(positions == 2)
+            #expect(result.outcome == .failed)
+        }
     }
 
     @Test("Cancellation before the cross-display retry stops additional writes")
