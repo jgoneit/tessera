@@ -26,9 +26,9 @@ struct EnhancedUserInterfaceTests {
     @Test("An enabled attribute is off for the whole body and restored afterwards")
     func suspendsAndRestores() {
         var events: [String] = []
-        let result = EnhancedUserInterface.withSuspended(
+        let result = EnhancedUserInterface.withSuspended(when: true,
             read: { events.append("read"); return true },
-            write: { events.append("write(\($0))") },
+            write: { events.append("write(\($0))"); return true },
             body: { events.append("body"); return 42 })
         #expect(result == 42)
         #expect(events == ["read", "write(false)", "body", "write(true)"])
@@ -37,11 +37,32 @@ struct EnhancedUserInterfaceTests {
     @Test("An off, absent or unreadable attribute is never written", arguments: [false, nil] as [Bool?])
     func leavesOtherStatesAlone(_ value: Bool?) {
         var events: [String] = []
-        EnhancedUserInterface.withSuspended(
+        EnhancedUserInterface.withSuspended(when: true,
             read: { events.append("read"); return value },
-            write: { events.append("write(\($0))") },
+            write: { events.append("write(\($0))"); return true },
             body: { events.append("body") })
         #expect(events == ["read", "body"])
+    }
+
+    @Test("A disabled suspension neither reads nor writes the attribute")
+    func disabledSkipsAttribute() {
+        var events: [String] = []
+        EnhancedUserInterface.withSuspended(when: false,
+            read: { events.append("read"); return true },
+            write: { events.append("write(\($0))"); return true },
+            body: { events.append("body") })
+        #expect(events == ["body"])
+    }
+
+    @Test("A failed suspension still restores, and a failed restoration is retried once")
+    func retriesFailedRestoration() {
+        var events: [String] = []
+        var failures = 2 // the suspension and the first restoration fail
+        EnhancedUserInterface.withSuspended(when: true,
+            read: { events.append("read"); return true },
+            write: { events.append("write(\($0))"); failures -= 1; return failures < 0 },
+            body: { events.append("body") })
+        #expect(events == ["read", "write(false)", "body", "write(true)", "write(true)"])
     }
 
     @Test("Issue #11: Brave's move from 2×2 column 2 to 3×2 column 3 overflows without suspension")
@@ -101,10 +122,9 @@ private final class AnimatedFrameWindow {
                 readFrame: { self.frame }, validate: {},
                 setSize: { try self.setSize($0) }, setPosition: { self.setPosition($0) })
         }
-        guard suspending else { return transaction() }
-        return EnhancedUserInterface.withSuspended(
+        return EnhancedUserInterface.withSuspended(when: suspending,
             read: { self.enhancedUserInterface },
-            write: { self.attributeWrites.append($0); self.enhancedUserInterface = $0 },
+            write: { self.attributeWrites.append($0); self.enhancedUserInterface = $0; return true },
             body: transaction)
     }
 

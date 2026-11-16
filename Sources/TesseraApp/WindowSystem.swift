@@ -166,16 +166,26 @@ actor WindowSystem {
                     self.log.notice("AX frame \(stage, privacy: .public): pid=\(session.pid) x=\(Double(observed.minX)) y=\(Double(observed.minY)) width=\(Double(observed.width)) height=\(Double(observed.height))")
                 })
         }
-        guard suspendEnhancedUserInterface else { return transaction() }
         // Restoration follows the final readback on every path, including
         // failures and cancellation, so each reported frame is a settled one.
+        // An already cancelled placement never touches the attribute.
         return EnhancedUserInterface.withSuspended(
-            read: { try? self.boolAttribute(EnhancedUserInterface.attribute, of: session.application) },
+            when: suspendEnhancedUserInterface && !Task.isCancelled,
+            read: { self.readEnhancedUserInterface(of: session) },
             write: { self.setEnhancedUserInterface($0, of: session) },
             body: transaction)
     }
 
-    private func setEnhancedUserInterface(_ enabled: Bool, of session: Session) {
+    private func readEnhancedUserInterface(of session: Session) -> Bool? {
+        do {
+            return try boolAttribute(EnhancedUserInterface.attribute, of: session.application)
+        } catch {
+            log.error("AXEnhancedUserInterface read failed: pid=\(session.pid) \(String(describing: error), privacy: .public)")
+            return nil
+        }
+    }
+
+    private func setEnhancedUserInterface(_ enabled: Bool, of session: Session) -> Bool {
         let error = AXUIElementSetAttributeValue(session.application,
             EnhancedUserInterface.attribute as CFString, enabled ? kCFBooleanTrue : kCFBooleanFalse)
         let change = enabled ? "restore" : "suspend"
@@ -184,6 +194,7 @@ actor WindowSystem {
         } else {
             log.error("AXEnhancedUserInterface \(change, privacy: .public) failed: pid=\(session.pid) code=\(error.rawValue)")
         }
+        return error == .success
     }
 
     private func configureTimeout(for element: AXUIElement) throws {

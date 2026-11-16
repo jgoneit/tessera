@@ -19,18 +19,20 @@ enum EnhancedUserInterface {
         return bundleIdentifier == brave || bundleIdentifier.hasPrefix(brave + ".")
     }
 
-    /// Runs `body` with the attribute off when it is currently on. An AX setter
-    /// error is ambiguous — the value can still have changed — so once the
-    /// attribute was on, restoration is always attempted, even after a failed
-    /// suspension. An off, absent or unreadable attribute is never written.
+    /// Runs `body` with the attribute off when `enabled` and the attribute is
+    /// currently on; otherwise nothing is read or written. An AX setter error
+    /// is ambiguous — the value can still have changed — so once the attribute
+    /// was on, restoration is always attempted, even after a failed suspension,
+    /// and a failed restoration is retried once. `write` reports success.
     static func withSuspended<Result>(
+        when enabled: Bool,
         read: () -> Bool?,
-        write: (Bool) -> Void,
+        write: (Bool) -> Bool,
         body: () -> Result
     ) -> Result {
-        guard read() == true else { return body() }
-        write(false)
-        defer { write(true) }
+        guard enabled, read() == true else { return body() }
+        _ = write(false)
+        defer { if !write(true) { _ = write(true) } }
         return body()
     }
 }
