@@ -11,8 +11,8 @@ macOS 14 이상이 필요합니다. 기본 빌드는 **빌드한 Mac의 아키�
 교차 컴파일을 만들지 않습니다. 예를 들어 Apple Silicon에서 빌드한 `arm64` 앱의 실행을 Intel Mac까지
 검증한 것은 아닙니다.
 
-현재 릴리스는 **0.1.0-alpha.5**이며, Apple Silicon용 설치 파일은
-[`Tessera-0.1.0-alpha.5-arm64.dmg`](https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.5/Tessera-0.1.0-alpha.5-arm64.dmg)입니다.
+현재 릴리스는 **0.1.0-alpha.6**이며, Apple Silicon용 설치 파일은
+[`Tessera-0.1.0-alpha.6-arm64.dmg`](https://github.com/jgoneit/tessera/releases/download/v0.1.0-alpha.6/Tessera-0.1.0-alpha.6-arm64.dmg)입니다.
 **alpha.3 이하를 사용 중이라면 이 DMG를 한 번 직접 설치해야 앱 안의 업데이트 기능을 사용할 수 있습니다.**
 
 ## 앱을 직접 설치하기
@@ -48,7 +48,7 @@ DMG에는 `Tessera.app`, `/Applications`를 가리키는 링크, 한국어·영�
 ## 업데이트하기
 
 alpha.4부터 메뉴와 설정의 **업데이트 확인 / Check for Updates…**로 새 버전을 확인합니다.
-앱 설정에는 `0.1.0-alpha.5`처럼 설치한 전체 릴리스 버전이 표시됩니다.
+앱 설정에는 `0.1.0-alpha.6`처럼 설치한 전체 릴리스 버전이 표시됩니다.
 
 1. 메뉴나 설정에서 **업데이트 확인**을 누릅니다. 확인 중·최신 버전·확인 실패를 구분해 표시합니다.
 2. 새 버전이 있으면 버전과 변경 내용을 읽고 **설치**를 선택합니다.
@@ -101,7 +101,7 @@ macOS의 별도 Spaces 전체화면으로 전환하지 않습니다.
 
 ## 이전 버전으로 복구하기
 
-문제가 있으면 Tessera를 종료하고 [이전 릴리스](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.4)의
+문제가 있으면 Tessera를 종료하고 [이전 릴리스](https://github.com/jgoneit/tessera/releases/tag/v0.1.0-alpha.5)의
 DMG에서 앱을 다시 복사하거나 보관한 이전 앱을 복원한 뒤 실행하세요. 기존 환경설정은 삭제하지 않습니다.
 필요하면 위 절차로 손쉬운 사용 권한을 갱신하세요. 자동 업데이트 확인을 잠시 끌 수 있습니다.
 업데이터는 자동으로 낮은 빌드를 설치하지 않으며, 수정 배포는 더 높은 빌드로 제공됩니다.
@@ -121,7 +121,7 @@ bash scripts/build-dmg.sh --skip-build
 ```
 
 파일명은 앱 번들의 전체 릴리스 버전과 실행 파일의 실제 아키텍처에서 정합니다.
-예를 들어 릴리스가 0.1.0-alpha.5이고 arm64 실행 파일이면 `dist/Tessera-0.1.0-alpha.5-arm64.dmg`가 생성됩니다.
+예를 들어 릴리스가 0.1.0-alpha.6이고 arm64 실행 파일이면 `dist/Tessera-0.1.0-alpha.6-arm64.dmg`가 생성됩니다.
 스크립트는 앱의 코드 서명을 확인하고, 임시 폴더에 복사한 번들에도 같은 검사를 수행합니다.
 `hdiutil create`로 UDZO 압축 이미지를 만들고 `hdiutil verify`로 이미지 체크섬을 검사한 뒤 최종 경로에 놓습니다.
 같은 이름의 DMG가 있으면 새 이미지 검증이 성공한 뒤 교체합니다. 실패나 중단 시 임시 파일은 정리합니다.

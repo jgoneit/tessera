@@ -510,7 +510,8 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
             }
             let currentFrame = try await windows.currentFrame(of: selection.target)
             try Task.checkCancellation()
-            guard session === selection, externalFrontmostApplication()?.processIdentifier == selection.target.pid else {
+            guard session === selection, let app = externalFrontmostApplication(),
+                  app.processIdentifier == selection.target.pid else {
                 throw WindowSystemError.targetChanged
             }
             let screens = ScreenCatalog.snapshot()
@@ -528,7 +529,9 @@ final class AppCoordinator: NSObject, ObservableObject, NSMenuDelegate, NSWindow
             return await windows.place(target: selection.target,
                 frame: CoordinateSpace.flip(desired, primaryTop: screens.primaryTop),
                 visibleFrame: CoordinateSpace.flip(display.visibleFrame, primaryTop: screens.primaryTop),
-                retrySizeAfterMove: source?.id != display.id)
+                retrySizeAfterMove: source?.id != display.id,
+                suspendEnhancedUserInterface: EnhancedUserInterface.requiresSuspension(
+                    bundleIdentifier: app.bundleIdentifier))
         } catch {
             return PlacementResult(outcome: .unavailable,
                 message: error is CancellationError ? L10n.text("Placement cancelled before resizing.") : UserFacingError.message(error),
